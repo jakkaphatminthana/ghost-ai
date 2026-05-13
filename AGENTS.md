@@ -19,4 +19,18 @@ Read the following files in order before implementing or making any architectura
 
 Update `context/progress-tracker.md` after each meaningful implementation change.
 
+### Working on `context/feature-specs/*`
+
+Whenever a task involves a file under `context/feature-specs/` (reading the spec to implement it, editing the spec, or building the feature it describes), update `context/progress-tracker.md` **twice**:
+
+**At the start of the work:**
+- Set `## Current Phase` to the feature (e.g. `Feature 04: Editor canvas`).
+- Set `## Current Goal` to the concrete goal for this session.
+- Add the feature under `## In Progress`.
+
+**At the end of the work (before reporting done):**
+- Move the feature from `## In Progress` to `## Completed` with a one-line summary of what shipped.
+- Update `## Next Up`.
+- Add any new entries to `## Open Questions`, `## Architecture Decisions`, or `## Session Notes` if applicable.
+
 If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.

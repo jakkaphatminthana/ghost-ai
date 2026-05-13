@@ -4,16 +4,17 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 02: Editor Chrome
+- Feature 03: Authentication
 
 ## Current Goal
 
-- Build the base chrome components that frame every editor screen: `EditorNavbar` and `ProjectSidebar`.
+- Wire Clerk into the Next.js app: ClerkProvider, auth pages, proxy.ts route protection, and UserButton in the editor navbar.
 
 ## Completed
 
 - 01-design-system: shadcn/ui configured with Tailwind v4, all 7 UI primitive components added, lucide-react installed, dark theme CSS variables set in globals.css, lib/utils.ts cn() helper in place.
 - 02-editor: `EditorNavbar` and `ProjectSidebar` built. Navbar has sidebar toggle with PanelLeftOpen/PanelLeftClose icons. Sidebar is a fixed overlay that slides in from the left with tabs (My Projects / Shared), empty placeholder states, and a New Project button. `app/page.tsx` wired up to demo both components.
+- 03-auth: Clerk wired in. `ClerkProvider` with dark theme in root layout. `proxy.ts` protects all routes except `/`, `/sign-in`, `/sign-up`. Two-panel sign-in/sign-up pages. `/` redirects to `/editor` or `/sign-in` based on auth. `UserButton` in editor navbar. `npm run build` passes.
 
 ## In Progress
 
@@ -21,7 +22,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 03: Editor canvas / React Flow integration.
+- 04: Editor canvas / React Flow integration.
 
 ## Open Questions
 
