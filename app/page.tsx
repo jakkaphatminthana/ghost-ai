@@ -5,8 +5,8 @@ export default async function Home() {
   const { isAuthenticated } = await auth();
 
   if (isAuthenticated) {
-    redirect("/editor");
+    redirect(process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL ?? "/editor");
   } else {
-    redirect("/sign-in");
+    redirect(process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ?? "/sign-in");
   }
 }

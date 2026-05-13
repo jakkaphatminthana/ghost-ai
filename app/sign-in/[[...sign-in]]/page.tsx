@@ -55,7 +55,7 @@ export default function SignInPage() {
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <SignIn forceRedirectUrl="/editor" />
+        <SignIn forceRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL ?? "/editor"} />
       </div>
     </div>
   );
