@@ -23,10 +23,10 @@ function ProjectItem({
   onDelete: (project: MockProject) => void;
 }) {
   return (
-    <div className="group relative flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-bg-elevated transition-colors cursor-default">
+    <div tabIndex={0} className="group relative flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-bg-elevated focus-within:bg-bg-elevated transition-colors cursor-default outline-none">
       <span className="flex-1 truncate text-sm text-text-secondary">{project.name}</span>
       {project.owned && (
-        <div className="invisible group-hover:visible flex items-center gap-0.5 shrink-0">
+        <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto flex items-center gap-0.5 shrink-0">
           <Button
             variant="ghost"
             size="icon-xs"
