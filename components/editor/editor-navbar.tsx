@@ -16,6 +16,8 @@ export function EditorNavbar({ isSidebarOpen, onSidebarToggle }: EditorNavbarPro
           variant="ghost"
           size="icon"
           onClick={onSidebarToggle}
+          aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          aria-expanded={isSidebarOpen}
           className="h-8 w-8 text-text-muted hover:text-text-primary hover:bg-bg-elevated"
         >
           {isSidebarOpen ? (

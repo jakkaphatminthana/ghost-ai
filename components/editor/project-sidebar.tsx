@@ -12,6 +12,8 @@ interface ProjectSidebarProps {
 export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
   return (
     <aside
+      aria-hidden={!isOpen}
+      inert={!isOpen}
       className={[
         "fixed left-0 top-0 z-40 flex h-full w-72 flex-col",
         "bg-bg-surface border-r border-border-default",
@@ -25,6 +27,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
           variant="ghost"
           size="icon"
           onClick={onClose}
+          aria-label="Close sidebar"
           className="h-7 w-7 text-text-muted hover:text-text-primary hover:bg-bg-elevated"
         >
           <X className="h-4 w-4" />
