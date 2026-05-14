@@ -55,7 +55,7 @@ export default function SignUpPage() {
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <SignUp forceRedirectUrl="/editor" />
+        <SignUp forceRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL ?? "/editor"} />
       </div>
     </div>
   );

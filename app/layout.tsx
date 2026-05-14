@@ -31,7 +31,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider
-          afterSignOutUrl="/sign-in"
+          afterSignOutUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ?? "/sign-in"}
           appearance={{
             theme: dark,
             variables: {
