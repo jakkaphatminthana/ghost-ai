@@ -10,10 +10,16 @@ export async function PATCH(
 
   const { projectId } = await params
 
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { ownerId: true },
-  })
+  let project: { ownerId: string } | null
+  try {
+    project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { ownerId: true },
+    })
+  } catch (err) {
+    console.error(err)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
   if (!project) return Response.json({ error: 'Not found' }, { status: 404 })
   if (project.ownerId !== userId) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -21,18 +27,24 @@ export async function PATCH(
   const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : undefined
   if (!name) return Response.json({ error: 'name is required' }, { status: 400 })
 
-  const updated = await prisma.project.update({
-    where: { id: projectId },
-    data: { name },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  })
+  let updated: { id: string; name: string; description: string | null; status: string; createdAt: Date; updatedAt: Date }
+  try {
+    updated = await prisma.project.update({
+      where: { id: projectId },
+      data: { name },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
 
   return Response.json({ project: updated })
 }
@@ -46,14 +58,25 @@ export async function DELETE(
 
   const { projectId } = await params
 
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { ownerId: true },
-  })
+  let project: { ownerId: string } | null
+  try {
+    project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { ownerId: true },
+    })
+  } catch (err) {
+    console.error(err)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
   if (!project) return Response.json({ error: 'Not found' }, { status: 404 })
   if (project.ownerId !== userId) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  await prisma.project.delete({ where: { id: projectId } })
+  try {
+    await prisma.project.delete({ where: { id: projectId } })
+  } catch (err) {
+    console.error(err)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
 
   return new Response(null, { status: 204 })
 }
