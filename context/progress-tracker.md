@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 06: Project API Routes
+- Feature 07: Wire Editor Home
 
 ## Current Goal
 
-- Build REST endpoints for list/create/rename/delete projects with auth and ownership checks.
+- Wire the editor home sidebar and dialogs to the real project API with server-side data fetching and client-side mutations.
 
 ## Completed
 
@@ -18,6 +18,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 04-project-dialogs: Editor home screen with heading, description, and New Project button. `useProjectDialogs` hook manages dialog/form/loading state. Create dialog with live slug preview, Rename dialog with prefilled input/auto-focus/Enter-to-submit, Delete dialog with destructive confirm. Sidebar wired with per-item Rename/Delete actions (owned only), mobile backdrop scrim. All wired through `EditorPage`. TypeScript and lint clean.
 - 05-prisma: `prisma/models/project.prisma` with `Project` + `ProjectCollaborator` models, enums, relations, and indexes. `lib/prisma.ts` cached singleton branching on `prisma+postgres://` (Accelerate) vs direct `@prisma/adapter-pg`. Multi-file schema via `prisma.config.ts` directory mode. Migration `init_project_models` applied. `npm run build` passes.
 - 06-project-apis: `GET/POST /api/projects` and `PATCH/DELETE /api/projects/[projectId]` route handlers. Auth enforced via Clerk `auth()`. Owner-only checks on rename/delete. 401 for unauthenticated, 403 for non-owner mutations.
+- 07-wire-editor-home: `app/editor/page.tsx` converted to server component; fetches owned + shared projects via `lib/data/projects.ts`. `hooks/use-project-actions.ts` manages create/rename/delete with real API calls and navigation. `EditorHome` client wrapper wires sidebar and dialogs to real data. Create dialog shows room ID preview (`slug-suffix`). Post-rename refreshes; post-delete redirects to `/editor` if active workspace, otherwise refreshes. `npm run build` passes.
 
 ## In Progress
 
@@ -25,7 +26,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 07: Editor canvas / React Flow integration.
+- 08: Editor canvas / React Flow integration.
 
 ## Open Questions
 

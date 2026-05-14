@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { DialogType, MockProject } from "@/hooks/use-project-dialogs";
+import type { DialogType, Project } from "@/hooks/use-project-actions";
 
 interface ProjectDialogsProps {
   dialogType: DialogType;
-  activeProject: MockProject | null;
+  activeProject: Project | null;
   nameInput: string;
   setNameInput: (value: string) => void;
-  slug: string;
+  roomId: string;
   isLoading: boolean;
   onClose: () => void;
   onConfirmCreate: () => void;
@@ -32,7 +32,7 @@ export function ProjectDialogs({
   activeProject,
   nameInput,
   setNameInput,
-  slug,
+  roomId,
   isLoading,
   onClose,
   onConfirmCreate,
@@ -75,10 +75,10 @@ export function ProjectDialogs({
               autoFocus
             />
             <p className="text-xs text-text-muted font-mono">
-              {slug ? (
+              {roomId ? (
                 <>
                   <span className="text-text-faint">ghost.ai/</span>
-                  <span className="text-text-secondary">{slug}</span>
+                  <span className="text-text-secondary">{roomId}</span>
                 </>
               ) : (
                 <span className="text-text-faint">

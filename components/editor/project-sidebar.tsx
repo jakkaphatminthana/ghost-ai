@@ -3,14 +3,16 @@
 import { X, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { MOCK_PROJECTS, type MockProject } from "@/hooks/use-project-dialogs";
+import type { Project } from "@/lib/data/projects";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  ownedProjects: Project[];
+  sharedProjects: Project[];
   onCreateProject: () => void;
-  onRenameProject: (project: MockProject) => void;
-  onDeleteProject: (project: MockProject) => void;
+  onRenameProject: (project: Project) => void;
+  onDeleteProject: (project: Project) => void;
 }
 
 function ProjectItem({
@@ -18,9 +20,9 @@ function ProjectItem({
   onRename,
   onDelete,
 }: {
-  project: MockProject;
-  onRename: (project: MockProject) => void;
-  onDelete: (project: MockProject) => void;
+  project: Project;
+  onRename: (project: Project) => void;
+  onDelete: (project: Project) => void;
 }) {
   return (
     <div tabIndex={0} className="group relative flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-bg-elevated focus-within:bg-bg-elevated transition-colors cursor-default outline-none">
@@ -54,13 +56,12 @@ function ProjectItem({
 export function ProjectSidebar({
   isOpen,
   onClose,
+  ownedProjects,
+  sharedProjects,
   onCreateProject,
   onRenameProject,
   onDeleteProject,
 }: ProjectSidebarProps) {
-  const myProjects = MOCK_PROJECTS.filter((p) => p.owned);
-  const sharedProjects = MOCK_PROJECTS.filter((p) => !p.owned);
-
   return (
     <>
       {/* Mobile backdrop scrim */}
@@ -108,13 +109,13 @@ export function ProjectSidebar({
           </div>
 
           <TabsContent value="my-projects" className="flex-1 overflow-y-auto p-2">
-            {myProjects.length === 0 ? (
+            {ownedProjects.length === 0 ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-sm text-text-muted">No projects yet.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
-                {myProjects.map((project) => (
+                {ownedProjects.map((project) => (
                   <ProjectItem
                     key={project.id}
                     project={project}
