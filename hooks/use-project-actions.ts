@@ -59,8 +59,9 @@ export function useProjectActions() {
   }, []);
 
   const handleCreate = useCallback(async () => {
-    if (!nameInput.trim() || !suffix) return;
-    const id = `${toSlug(nameInput.trim())}-${suffix}`;
+    const prefix = toSlug(nameInput.trim());
+    if (!prefix || !suffix) return;
+    const id = `${prefix}-${suffix}`;
     setIsLoading(true);
     try {
       const res = await fetch("/api/projects", {
@@ -100,7 +101,8 @@ export function useProjectActions() {
     if (!activeProject) return;
     setIsLoading(true);
     try {
-      await fetch(`/api/projects/${activeProject.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/projects/${activeProject.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
       setDialogType(null);
       setActiveProject(null);
       if (pathname === `/editor/${activeProject.id}`) {
@@ -108,6 +110,8 @@ export function useProjectActions() {
       } else {
         startTransition(() => router.refresh());
       }
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
