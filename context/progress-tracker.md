@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 10: Liveblocks Setup (complete)
+- Feature 11: Base Canvas (complete)
 
 ## Current Goal
 
-- None.
+- Replace the canvas placeholder with a Liveblocks-backed React Flow canvas.
 
 ## Completed
 
@@ -22,6 +22,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 08-editor-workspace-shell: `app/editor/[roomId]/page.tsx` server component with auth redirect and `AccessDenied` for missing/unauthorized projects. `lib/project-access.ts` exposes `getClerkIdentity` and `getProjectAccess` helpers. `components/editor/access-denied.tsx` centered lock-icon page with back link. `EditorNavbar` extended with optional `projectName`, share button, and AI sidebar toggle. `ProjectSidebar` extended with `activeProjectId` prop for room highlighting. `WorkspaceShell` client wrapper with canvas placeholder and collapsible AI sidebar placeholder. `npm run build` passes.
 - 09-share-dialog: Share dialog added. Owners can invite/remove collaborators by email; collaborator list enriched with Clerk display name and avatar, falling back to initials. Collaborators see read-only list. Copy link button with "Copied!" feedback. API routes: `GET/POST /api/projects/[projectId]/collaborators`, `DELETE /api/projects/[projectId]/collaborators/[collaboratorId]`. `getProjectAccess` now returns `isOwner`. `npm run build` passes.
 - 10-liveblocks-setup: `liveblocks.config.ts` typed with `Presence` (cursor + isThinking) and `UserMeta` (name, avatar, color). `lib/liveblocks.ts` exports cached `Liveblocks` node client and `getUserColor` deterministic color helper. `POST /api/liveblocks-auth` verifies Clerk auth + project access, ensures room exists via `getOrCreateRoom`/`updateRoom`, and returns an ID-token session with name, avatar, and cursor color. `npm run build` passes.
+- 11-base-canvas: `types/canvas.ts` defines `CanvasNodeData`, `CanvasNode`, `CanvasEdge`, `NODE_COLORS`, `NODE_SHAPES`. `liveblocks.config.ts` Storage typed as `{ flow: LiveblocksFlow<CanvasNode, CanvasEdge> }`. `canvas-room.tsx` wraps `LiveblocksProvider` + `RoomProvider` with initial presence/storage, `ClientSideSuspense` loading state, and class-based error fallback. `canvas-flow.tsx` uses `useLiveblocksFlow` with suspense, renders `ReactFlow` with `ConnectionMode.Loose`, `fitView`, `MiniMap`, and dot-pattern `Background`. Canvas placeholder replaced in `workspace-shell.tsx`. `npm run build` passes.
 
 ## In Progress
 
@@ -29,7 +30,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 11: Editor canvas / React Flow integration.
+- 12: Canvas nodes / custom node rendering.
 
 ## Open Questions
 

@@ -10,14 +10,14 @@ export async function POST(request: Request) {
 
   const { userId, email } = identity;
 
-  let body: { projectId?: string };
+  let body: { room?: string };
   try {
     body = await request.json();
   } catch {
     return new Response("Bad Request", { status: 400 });
   }
 
-  const { projectId } = body;
+  const projectId = body.room;
   if (!projectId) {
     return new Response("Bad Request", { status: 400 });
   }

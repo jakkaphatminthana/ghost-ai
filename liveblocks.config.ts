@@ -1,3 +1,6 @@
+import type { LiveblocksFlow } from "@liveblocks/react-flow";
+import type { CanvasNode, CanvasEdge } from "./types/canvas";
+
 declare global {
   interface Liveblocks {
     Presence: {
@@ -5,7 +8,9 @@ declare global {
       isThinking: boolean;
     };
 
-    Storage: Record<never, never>;
+    Storage: {
+      flow: LiveblocksFlow<CanvasNode, CanvasEdge>;
+    };
 
     UserMeta: {
       id: string;
@@ -24,4 +29,3 @@ declare global {
   }
 }
 
-export {};
