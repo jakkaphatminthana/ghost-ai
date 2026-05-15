@@ -65,7 +65,9 @@ export function ShareDialog({
   isOwner,
 }: ShareDialogProps) {
   // null = loading, [] = loaded/empty, [...] = loaded with data
-  const [collaborators, setCollaborators] = useState<CollaboratorProfile[] | null>(null);
+  const [collaborators, setCollaborators] = useState<
+    CollaboratorProfile[] | null
+  >(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
@@ -84,7 +86,9 @@ export function ShareDialog({
       .catch(() => {
         if (active) setCollaborators([]);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [open, projectId]);
 
   function handleOpenChange(next: boolean) {
@@ -129,9 +133,11 @@ export function ShareDialog({
     try {
       await fetch(
         `/api/projects/${projectId}/collaborators/${collaboratorId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
-      setCollaborators((prev) => (prev ?? []).filter((c) => c.id !== collaboratorId));
+      setCollaborators((prev) =>
+        (prev ?? []).filter((c) => c.id !== collaboratorId),
+      );
     } catch {
       // silently fail — list stays unchanged
     } finally {
@@ -147,7 +153,10 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="rounded-3xl overflow-hidden bg-bg-elevated border-border-default sm:max-w-md" showCloseButton={false}>
+      <DialogContent
+        className="rounded-3xl overflow-hidden bg-bg-elevated border-border-default sm:max-w-md"
+        showCloseButton={false}
+      >
         <DialogHeader>
           <DialogTitle className="text-text-primary">
             Share &ldquo;{projectName}&rdquo;
@@ -193,7 +202,9 @@ export function ShareDialog({
                   setInviteError(null);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !inviting) handleInvite();
+                  if (e.key === "Enter" && !inviting && inviteEmail.trim()) {
+                    handleInvite();
+                  }
                 }}
                 disabled={inviting}
                 className="flex-1 min-w-0"
@@ -227,7 +238,9 @@ export function ShareDialog({
               <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
             </div>
           ) : collaborators.length === 0 ? (
-            <p className="text-sm text-text-faint py-2">No collaborators yet.</p>
+            <p className="text-sm text-text-faint py-2">
+              No collaborators yet.
+            </p>
           ) : (
             collaborators.map((c) => (
               <div
