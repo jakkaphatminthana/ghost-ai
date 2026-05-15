@@ -28,6 +28,7 @@ export default async function WorkspacePage({ params }: Props) {
     <WorkspaceShell
       projectName={project.name}
       activeProjectId={roomId}
+      isOwner={project.isOwner}
       ownedProjects={ownedProjects}
       sharedProjects={sharedProjects}
     />
