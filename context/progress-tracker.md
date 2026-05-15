@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 07: Wire Editor Home
+- Feature 08: Editor Workspace Shell (complete)
 
 ## Current Goal
 
-- Wire the editor home sidebar and dialogs to the real project API with server-side data fetching and client-side mutations.
+- None.
 
 ## Completed
 
@@ -19,6 +19,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 05-prisma: `prisma/models/project.prisma` with `Project` + `ProjectCollaborator` models, enums, relations, and indexes. `lib/prisma.ts` cached singleton branching on `prisma+postgres://` (Accelerate) vs direct `@prisma/adapter-pg`. Multi-file schema via `prisma.config.ts` directory mode. Migration `init_project_models` applied. `npm run build` passes.
 - 06-project-apis: `GET/POST /api/projects` and `PATCH/DELETE /api/projects/[projectId]` route handlers. Auth enforced via Clerk `auth()`. Owner-only checks on rename/delete. 401 for unauthenticated, 403 for non-owner mutations.
 - 07-wire-editor-home: `app/editor/page.tsx` converted to server component; fetches owned + shared projects via `lib/data/projects.ts`. `hooks/use-project-actions.ts` manages create/rename/delete with real API calls and navigation. `EditorHome` client wrapper wires sidebar and dialogs to real data. Create dialog shows room ID preview (`slug-suffix`). Post-rename refreshes; post-delete redirects to `/editor` if active workspace, otherwise refreshes. `npm run build` passes.
+- 08-editor-workspace-shell: `app/editor/[roomId]/page.tsx` server component with auth redirect and `AccessDenied` for missing/unauthorized projects. `lib/project-access.ts` exposes `getClerkIdentity` and `getProjectAccess` helpers. `components/editor/access-denied.tsx` centered lock-icon page with back link. `EditorNavbar` extended with optional `projectName`, share button, and AI sidebar toggle. `ProjectSidebar` extended with `activeProjectId` prop for room highlighting. `WorkspaceShell` client wrapper with canvas placeholder and collapsible AI sidebar placeholder. `npm run build` passes.
 
 ## In Progress
 
@@ -26,7 +27,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 08: Editor canvas / React Flow integration.
+- 09: Editor canvas / React Flow integration.
 
 ## Open Questions
 
