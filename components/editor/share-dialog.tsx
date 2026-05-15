@@ -64,8 +64,8 @@ export function ShareDialog({
   projectName,
   isOwner,
 }: ShareDialogProps) {
-  const [collaborators, setCollaborators] = useState<CollaboratorProfile[]>([]);
-  const [loading, setLoading] = useState(false);
+  // null = loading, [] = loaded/empty, [...] = loaded with data
+  const [collaborators, setCollaborators] = useState<CollaboratorProfile[] | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
@@ -75,20 +75,23 @@ export function ShareDialog({
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
+    let active = true;
     fetch(`/api/projects/${projectId}/collaborators`)
       .then((r) => r.json())
       .then((data) => {
-        setCollaborators(data.collaborators ?? []);
+        if (active) setCollaborators(data.collaborators ?? []);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (active) setCollaborators([]);
+      });
+    return () => { active = false; };
   }, [open, projectId]);
 
   function handleOpenChange(next: boolean) {
     if (!next) {
       setInviteEmail("");
       setInviteError(null);
+      setCollaborators(null);
     }
     onOpenChange(next);
   }
@@ -112,7 +115,7 @@ export function ShareDialog({
         setInviteError(data.error ?? "Failed to invite collaborator.");
         return;
       }
-      setCollaborators((prev) => [...prev, data.collaborator]);
+      setCollaborators((prev) => [...(prev ?? []), data.collaborator]);
       setInviteEmail("");
     } catch {
       setInviteError("Failed to invite collaborator.");
@@ -128,7 +131,7 @@ export function ShareDialog({
         `/api/projects/${projectId}/collaborators/${collaboratorId}`,
         { method: "DELETE" }
       );
-      setCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
+      setCollaborators((prev) => (prev ?? []).filter((c) => c.id !== collaboratorId));
     } catch {
       // silently fail — list stays unchanged
     } finally {
@@ -144,7 +147,7 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="rounded-3xl bg-bg-elevated border-border-default max-w-md">
+      <DialogContent className="rounded-3xl overflow-hidden bg-bg-elevated border-border-default sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="text-text-primary">
             Share &ldquo;{projectName}&rdquo;
@@ -153,7 +156,7 @@ export function ShareDialog({
 
         {/* Copy link */}
         <div className="flex items-center gap-2 rounded-xl border border-border-default bg-bg-surface px-3 py-2">
-          <span className="flex-1 truncate text-xs text-text-muted font-mono">
+          <span className="flex-1 min-w-0 truncate text-xs text-text-muted font-mono">
             {typeof window !== "undefined" ? window.location.href : ""}
           </span>
           <Button
@@ -193,7 +196,7 @@ export function ShareDialog({
                   if (e.key === "Enter" && !inviting) handleInvite();
                 }}
                 disabled={inviting}
-                className="flex-1"
+                className="flex-1 min-w-0"
               />
               <Button
                 onClick={handleInvite}
@@ -219,7 +222,7 @@ export function ShareDialog({
           <p className="text-xs font-medium text-text-muted uppercase tracking-wide mb-1">
             Collaborators
           </p>
-          {loading ? (
+          {collaborators === null ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-4 w-4 animate-spin text-text-muted" />
             </div>
