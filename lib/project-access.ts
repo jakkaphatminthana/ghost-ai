@@ -18,7 +18,7 @@ export async function getProjectAccess(
   projectId: string,
   userId: string,
   email: string
-): Promise<{ id: string; name: string } | null> {
+): Promise<{ id: string; name: string; isOwner: boolean } | null> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: {
@@ -31,11 +31,11 @@ export async function getProjectAccess(
 
   if (!project) return null;
 
+  const isOwner = project.ownerId === userId;
   const hasAccess =
-    project.ownerId === userId ||
-    project.collaborators.some((c) => c.email === email);
+    isOwner || project.collaborators.some((c) => c.email === email);
 
   if (!hasAccess) return null;
 
-  return { id: project.id, name: project.name };
+  return { id: project.id, name: project.name, isOwner };
 }

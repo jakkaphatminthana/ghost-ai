@@ -4,12 +4,14 @@ import { useState } from "react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
+import { ShareDialog } from "@/components/editor/share-dialog";
 import { useProjectActions } from "@/hooks/use-project-actions";
 import type { Project } from "@/lib/data/projects";
 
 interface WorkspaceShellProps {
   projectName: string;
   activeProjectId: string;
+  isOwner: boolean;
   ownedProjects: Project[];
   sharedProjects: Project[];
 }
@@ -17,11 +19,13 @@ interface WorkspaceShellProps {
 export function WorkspaceShell({
   projectName,
   activeProjectId,
+  isOwner,
   ownedProjects,
   sharedProjects,
 }: WorkspaceShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const {
     dialogType,
@@ -45,6 +49,7 @@ export function WorkspaceShell({
         isSidebarOpen={isSidebarOpen}
         onSidebarToggle={() => setIsSidebarOpen((prev) => !prev)}
         projectName={projectName}
+        onShareClick={() => setIsShareOpen(true)}
         isAiSidebarOpen={isAiSidebarOpen}
         onAiSidebarToggle={() => setIsAiSidebarOpen((prev) => !prev)}
       />
@@ -88,6 +93,14 @@ export function WorkspaceShell({
         onConfirmCreate={handleCreate}
         onConfirmRename={handleRename}
         onConfirmDelete={handleDelete}
+      />
+
+      <ShareDialog
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        projectId={activeProjectId}
+        projectName={projectName}
+        isOwner={isOwner}
       />
     </div>
   );

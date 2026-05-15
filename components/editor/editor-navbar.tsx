@@ -8,6 +8,7 @@ interface EditorNavbarProps {
   isSidebarOpen: boolean;
   onSidebarToggle: () => void;
   projectName?: string;
+  onShareClick?: () => void;
   isAiSidebarOpen?: boolean;
   onAiSidebarToggle?: () => void;
 }
@@ -16,6 +17,7 @@ export function EditorNavbar({
   isSidebarOpen,
   onSidebarToggle,
   projectName,
+  onShareClick,
   isAiSidebarOpen,
   onAiSidebarToggle,
 }: EditorNavbarProps) {
@@ -44,27 +46,28 @@ export function EditorNavbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-1">
+        {onShareClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onShareClick}
+            className="h-8 gap-1.5 text-text-muted hover:text-text-primary hover:bg-bg-elevated"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
+        )}
         {onAiSidebarToggle && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 text-text-muted hover:text-text-primary hover:bg-bg-elevated"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onAiSidebarToggle}
-              aria-label={isAiSidebarOpen ? "Close AI sidebar" : "Open AI sidebar"}
-              aria-expanded={isAiSidebarOpen}
-              className="h-8 w-8 text-text-muted hover:text-accent-ai-text hover:bg-bg-elevated"
-            >
-              <Sparkles className="h-5 w-5" />
-            </Button>
-          </>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onAiSidebarToggle}
+            aria-label={isAiSidebarOpen ? "Close AI sidebar" : "Open AI sidebar"}
+            aria-expanded={isAiSidebarOpen}
+            className="h-8 w-8 text-text-muted hover:text-accent-ai-text hover:bg-bg-elevated"
+          >
+            <Sparkles className="h-5 w-5" />
+          </Button>
         )}
         <UserButton />
       </div>

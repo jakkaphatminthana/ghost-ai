@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 08: Editor Workspace Shell (complete)
+- Feature 09: Share Dialog (complete)
 
 ## Current Goal
 
@@ -20,6 +20,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 06-project-apis: `GET/POST /api/projects` and `PATCH/DELETE /api/projects/[projectId]` route handlers. Auth enforced via Clerk `auth()`. Owner-only checks on rename/delete. 401 for unauthenticated, 403 for non-owner mutations.
 - 07-wire-editor-home: `app/editor/page.tsx` converted to server component; fetches owned + shared projects via `lib/data/projects.ts`. `hooks/use-project-actions.ts` manages create/rename/delete with real API calls and navigation. `EditorHome` client wrapper wires sidebar and dialogs to real data. Create dialog shows room ID preview (`slug-suffix`). Post-rename refreshes; post-delete redirects to `/editor` if active workspace, otherwise refreshes. `npm run build` passes.
 - 08-editor-workspace-shell: `app/editor/[roomId]/page.tsx` server component with auth redirect and `AccessDenied` for missing/unauthorized projects. `lib/project-access.ts` exposes `getClerkIdentity` and `getProjectAccess` helpers. `components/editor/access-denied.tsx` centered lock-icon page with back link. `EditorNavbar` extended with optional `projectName`, share button, and AI sidebar toggle. `ProjectSidebar` extended with `activeProjectId` prop for room highlighting. `WorkspaceShell` client wrapper with canvas placeholder and collapsible AI sidebar placeholder. `npm run build` passes.
+- 09-share-dialog: Share dialog added. Owners can invite/remove collaborators by email; collaborator list enriched with Clerk display name and avatar, falling back to initials. Collaborators see read-only list. Copy link button with "Copied!" feedback. API routes: `GET/POST /api/projects/[projectId]/collaborators`, `DELETE /api/projects/[projectId]/collaborators/[collaboratorId]`. `getProjectAccess` now returns `isOwner`. `npm run build` passes.
 
 ## In Progress
 
@@ -27,7 +28,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 09: Editor canvas / React Flow integration.
+- 10: Editor canvas / React Flow integration.
 
 ## Open Questions
 
