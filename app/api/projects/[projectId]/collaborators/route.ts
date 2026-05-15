@@ -30,7 +30,7 @@ async function enrichEmails(
     )
     if (!primary) continue
     const nameParts = [user.firstName, user.lastName].filter(Boolean)
-    profileMap.set(primary.emailAddress, {
+    profileMap.set(primary.emailAddress.toLowerCase(), {
       name: nameParts.length > 0 ? nameParts.join(' ') : (user.username ?? null),
       avatarUrl: user.imageUrl ?? null,
     })
