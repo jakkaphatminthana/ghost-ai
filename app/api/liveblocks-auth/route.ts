@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     return new Response("Bad Request", { status: 400 });
   }
 
-  const projectId = body.room;
+  const projectId = body.room?.trim() ?? "";
   if (!projectId) {
     return new Response("Bad Request", { status: 400 });
   }
