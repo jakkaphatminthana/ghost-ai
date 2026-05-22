@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { X, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -28,10 +29,10 @@ function ProjectItem({
   onDelete: (project: Project) => void;
 }) {
   return (
-    <div
-      tabIndex={0}
+    <Link
+      href={`/editor/${project.id}`}
       className={[
-        "group relative flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-default outline-none",
+        "group relative flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer outline-none",
         isActive
           ? "bg-accent-primary-dim"
           : "hover:bg-bg-elevated focus-within:bg-bg-elevated",
@@ -44,7 +45,7 @@ function ProjectItem({
             variant="ghost"
             size="icon-xs"
             className="h-6 w-6 text-text-faint hover:text-text-primary hover:bg-bg-subtle"
-            onClick={() => onRename(project)}
+            onClick={(e) => { e.preventDefault(); onRename(project); }}
             aria-label={`Rename ${project.name}`}
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -53,14 +54,14 @@ function ProjectItem({
             variant="ghost"
             size="icon-xs"
             className="h-6 w-6 text-text-faint hover:text-state-error hover:bg-bg-subtle"
-            onClick={() => onDelete(project)}
+            onClick={(e) => { e.preventDefault(); onDelete(project); }}
             aria-label={`Delete ${project.name}`}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}
-    </div>
+    </Link>
   );
 }
 

@@ -5,6 +5,7 @@ import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareDialog } from "@/components/editor/share-dialog";
+import { CanvasRoom } from "@/components/editor/canvas-room";
 import { useProjectActions } from "@/hooks/use-project-actions";
 import type { Project } from "@/lib/data/projects";
 
@@ -66,8 +67,8 @@ export function WorkspaceShell({
           onDeleteProject={openDelete}
         />
 
-        <main className="flex flex-1 items-center justify-center bg-bg-base">
-          <p className="text-sm text-text-muted">Canvas coming soon</p>
+        <main className="flex-1 overflow-hidden">
+          <CanvasRoom roomId={activeProjectId} />
         </main>
 
         {isAiSidebarOpen && (
