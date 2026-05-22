@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 11: Base Canvas (complete)
+- Feature 12: Shape Panel (complete)
 
 ## Current Goal
 
-- Replace the canvas placeholder with a Liveblocks-backed React Flow canvas.
+- Add a bottom shape panel so users can drag shapes onto the canvas and create new nodes.
 
 ## Completed
 
@@ -23,6 +23,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 09-share-dialog: Share dialog added. Owners can invite/remove collaborators by email; collaborator list enriched with Clerk display name and avatar, falling back to initials. Collaborators see read-only list. Copy link button with "Copied!" feedback. API routes: `GET/POST /api/projects/[projectId]/collaborators`, `DELETE /api/projects/[projectId]/collaborators/[collaboratorId]`. `getProjectAccess` now returns `isOwner`. `npm run build` passes.
 - 10-liveblocks-setup: `liveblocks.config.ts` typed with `Presence` (cursor + isThinking) and `UserMeta` (name, avatar, color). `lib/liveblocks.ts` exports cached `Liveblocks` node client and `getUserColor` deterministic color helper. `POST /api/liveblocks-auth` verifies Clerk auth + project access, ensures room exists via `getOrCreateRoom`/`updateRoom`, and returns an ID-token session with name, avatar, and cursor color. `npm run build` passes.
 - 11-base-canvas: `types/canvas.ts` defines `CanvasNodeData`, `CanvasNode`, `CanvasEdge`, `NODE_COLORS`, `NODE_SHAPES`. `liveblocks.config.ts` Storage typed as `{ flow: LiveblocksFlow<CanvasNode, CanvasEdge> }`. `canvas-room.tsx` wraps `LiveblocksProvider` + `RoomProvider` with initial presence/storage, `ClientSideSuspense` loading state, and class-based error fallback. `canvas-flow.tsx` uses `useLiveblocksFlow` with suspense, renders `ReactFlow` with `ConnectionMode.Loose`, `fitView`, `MiniMap`, and dot-pattern `Background`. Canvas placeholder replaced in `workspace-shell.tsx`. `npm run build` passes.
+- 12-shape-panel: `canvas-node.tsx` custom node renderer (bordered rectangle, centered label, 4 handles). `shape-panel.tsx` floating pill toolbar with 6 draggable shape buttons (rectangle, diamond, circle, pill, cylinder, hexagon) and `application/ghost-shape` drag payload. `canvas-flow.tsx` wrapped in `ReactFlowProvider`; inner component uses `useReactFlow` for `screenToFlowPosition` and drops via `onNodesChange([{ type: "add", item }])`. `npm run build` passes.
 
 ## In Progress
 
@@ -30,7 +31,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 12: Canvas nodes / custom node rendering.
+- 13: Shape-specific node visuals (diamond SVG, hexagon SVG, cylinder SVG, pill CSS, circle CSS).
 
 ## Open Questions
 
