@@ -14,7 +14,7 @@ import {
 } from "@xyflow/react";
 import { useLiveblocksFlow } from "@liveblocks/react-flow";
 import type { CanvasNode, CanvasEdge, NodeShape } from "@/types/canvas";
-import { NODE_COLORS } from "@/types/canvas";
+import { NODE_COLORS, NODE_SHAPES } from "@/types/canvas";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
 import { ShapePanel } from "@/components/editor/shape-panel";
 
@@ -26,10 +26,8 @@ interface ShapeDragPayload {
   height: number;
 }
 
-let nodeCounter = 0;
-
 function generateNodeId(shape: NodeShape): string {
-  return `${shape}-${Date.now()}-${++nodeCounter}`;
+  return `${shape}-${crypto.randomUUID()}`;
 }
 
 export function CanvasFlow() {
@@ -61,6 +59,16 @@ function CanvasFlowInner() {
       try {
         payload = JSON.parse(raw) as ShapeDragPayload;
       } catch {
+        return;
+      }
+
+      if (
+        !(NODE_SHAPES as readonly string[]).includes(payload.shape) ||
+        !Number.isFinite(payload.width) ||
+        !Number.isFinite(payload.height) ||
+        payload.width <= 0 ||
+        payload.height <= 0
+      ) {
         return;
       }
 
