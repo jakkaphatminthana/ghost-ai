@@ -14,11 +14,14 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import { useLiveblocksFlow } from "@liveblocks/react-flow";
+import { useUndo, useRedo } from "@liveblocks/react";
 import type { CanvasNode, CanvasEdge, NodeShape } from "@/types/canvas";
 import { NODE_COLORS, NODE_SHAPES } from "@/types/canvas";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
 import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
 import { ShapePanel } from "@/components/editor/shape-panel";
+import { CanvasControls } from "@/components/editor/canvas-controls";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 const nodeTypes = { canvasNode: CanvasNodeComponent };
 
@@ -51,7 +54,11 @@ function CanvasFlowInner() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true });
 
-  const { screenToFlowPosition } = useReactFlow();
+  const rfInstance = useReactFlow<CanvasNode, CanvasEdge>();
+  const { screenToFlowPosition } = rfInstance;
+  const undo = useUndo();
+  const redo = useRedo();
+  useKeyboardShortcuts({ rfInstance, undo, redo });
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -130,6 +137,9 @@ function CanvasFlowInner() {
         maskColor="rgba(0,0,0,0.6)"
         nodeColor="var(--border-subtle)"
       />
+      <Panel position="bottom-left" className="mb-4 ml-4">
+        <CanvasControls />
+      </Panel>
       <Panel position="bottom-center" className="mb-4">
         <ShapePanel />
       </Panel>
