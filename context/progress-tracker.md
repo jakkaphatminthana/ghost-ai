@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 13: Node Shape
+- Feature 14: Node Editing
 
 ## Current Goal
 
-- Replace placeholder node renderer with proper shape rendering and add a ghost drag preview.
+- Add node resizing and inline label editing to canvas nodes.
 
 ## Completed
 
@@ -25,6 +25,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 11-base-canvas: `types/canvas.ts` defines `CanvasNodeData`, `CanvasNode`, `CanvasEdge`, `NODE_COLORS`, `NODE_SHAPES`. `liveblocks.config.ts` Storage typed as `{ flow: LiveblocksFlow<CanvasNode, CanvasEdge> }`. `canvas-room.tsx` wraps `LiveblocksProvider` + `RoomProvider` with initial presence/storage, `ClientSideSuspense` loading state, and class-based error fallback. `canvas-flow.tsx` uses `useLiveblocksFlow` with suspense, renders `ReactFlow` with `ConnectionMode.Loose`, `fitView`, `MiniMap`, and dot-pattern `Background`. Canvas placeholder replaced in `workspace-shell.tsx`. `npm run build` passes.
 - 12-shape-panel: `canvas-node.tsx` custom node renderer (bordered rectangle, centered label, 4 handles). `shape-panel.tsx` floating pill toolbar with 6 draggable shape buttons (rectangle, diamond, circle, pill, cylinder, hexagon) and `application/ghost-shape` drag payload. `canvas-flow.tsx` wrapped in `ReactFlowProvider`; inner component uses `useReactFlow` for `screenToFlowPosition` and drops via `onNodesChange([{ type: "add", item }])`. `npm run build` passes.
 - 13-node-shape: `canvas-node.tsx` replaced with proper shape rendering — rectangle/pill/circle via CSS border-radius, diamond/hexagon/cylinder via inline SVG with `vectorEffect="non-scaling-stroke"`. `shape-panel.tsx` extended with ghost drag preview: suppresses browser default ghost via transparent GIF, tracks cursor via document `dragover`, renders a fixed-position portal following the cursor. `npm run build` passes.
+- 14-node-editing: `canvas-node.tsx` extended with `NodeResizer` (subtle 7px handles, accent-primary color, 80×40 minimum) and inline label editing — double-click opens a transparent textarea overlay, label updates via `useMutation` directly into Liveblocks storage, closes on blur or Escape, pointer/mouse events stopped on the textarea to prevent canvas drag. Placeholder text shown in `--text-faint` when label is empty. `npm run build` passes.
 
 ## In Progress
 
@@ -32,7 +33,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- TBD
+- Feature 15: TBD
 
 ## Open Questions
 

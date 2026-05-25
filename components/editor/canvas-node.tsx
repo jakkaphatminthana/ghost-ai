@@ -1,9 +1,14 @@
 "use client";
 
-import { Handle, Position } from "@xyflow/react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Handle, Position, NodeResizer } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
+import { useMutation } from "@liveblocks/react";
 import { NODE_COLORS } from "@/types/canvas";
 import type { CanvasNode, NodeShape } from "@/types/canvas";
+
+const MIN_NODE_WIDTH = 80;
+const MIN_NODE_HEIGHT = 40;
 
 interface ShapeBodyProps {
   shape: NodeShape;
@@ -74,22 +79,113 @@ function ShapeBody({ shape, color, borderColor }: ShapeBodyProps) {
   );
 }
 
-export function CanvasNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
+export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode>) {
   const textColor =
     NODE_COLORS.find((c) => c.fill === data.color)?.text ?? "#EDEDED";
   const borderColor = selected ? "var(--accent-primary)" : "var(--border-subtle)";
 
+  const [editing, setEditing] = useState(false);
+  const labelRef = useRef<HTMLDivElement>(null);
+  const pendingLabel = useRef(data.label);
+
+  const updateLabel = useMutation(
+    ({ storage }, newLabel: string) => {
+      const flow = storage.get("flow");
+      if (!flow) return;
+      const lbNode = flow.get("nodes").get(id);
+      if (!lbNode) return;
+      const lbData = lbNode.get("data") as unknown as { set(k: string, v: unknown): void };
+      lbData.set("label", newLabel);
+    },
+    [id]
+  );
+
+  useEffect(() => {
+    if (!editing || !labelRef.current) return;
+    const el = labelRef.current;
+    el.textContent = pendingLabel.current;
+    el.focus();
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }, [editing]);
+
+  const startEditing = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      pendingLabel.current = data.label;
+      setEditing(true);
+    },
+    [data.label]
+  );
+
+  const stopEditing = useCallback(() => setEditing(false), []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") stopEditing();
+    },
+    [stopEditing]
+  );
+
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div
+      style={{ width: "100%", height: "100%", position: "relative" }}
+      onDoubleClick={startEditing}
+    >
+      <NodeResizer
+        isVisible={selected}
+        minWidth={MIN_NODE_WIDTH}
+        minHeight={MIN_NODE_HEIGHT}
+        lineStyle={{ borderColor: "var(--accent-primary)", opacity: 0.5 }}
+        handleStyle={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--accent-primary)",
+          width: 7,
+          height: 7,
+          borderRadius: 2,
+        }}
+      />
       <ShapeBody shape={data.shape} color={data.color} borderColor={borderColor} />
-      <div
-        className="pointer-events-none flex items-center justify-center"
-        style={{ position: "absolute", inset: 0, color: textColor }}
-      >
-        <span className="select-none wrap-break-word px-3 text-center text-sm font-medium leading-tight">
-          {data.label}
-        </span>
-      </div>
+
+      {editing ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            ref={labelRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={(e) => updateLabel(e.currentTarget.textContent ?? "")}
+            onBlur={stopEditing}
+            onKeyDown={handleKeyDown}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            className="pointer-events-auto w-full px-3 text-center text-sm font-medium leading-tight outline-none"
+            style={{ color: textColor, wordBreak: "break-word" }}
+          />
+        </div>
+      ) : (
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          style={{ color: textColor }}
+        >
+          {data.label ? (
+            <span className="select-none wrap-break-word px-3 text-center text-sm font-medium leading-tight">
+              {data.label}
+            </span>
+          ) : (
+            <span
+              className="select-none text-center text-sm font-medium leading-tight"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Label...
+            </span>
+          )}
+        </div>
+      )}
 
       <Handle type="target" position={Position.Top} />
       <Handle type="target" position={Position.Left} />
@@ -97,4 +193,4 @@ export function CanvasNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
       <Handle type="source" position={Position.Right} />
     </div>
   );
-} 
+}
