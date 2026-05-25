@@ -10,6 +10,97 @@ import type { CanvasNode, NodeShape } from "@/types/canvas";
 const MIN_NODE_WIDTH = 80;
 const MIN_NODE_HEIGHT = 40;
 
+function ColorSwatch({
+  fill,
+  text,
+  isActive,
+  onClick,
+}: {
+  fill: string;
+  text: string;
+  isActive: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        background: fill,
+        border: isActive
+          ? `2px solid ${text}`
+          : "1.5px solid rgba(255,255,255,0.15)",
+        cursor: "pointer",
+        outline: "none",
+        flexShrink: 0,
+        boxShadow: hovered && !isActive ? `0 0 0 3px ${text}33` : "none",
+        transition: "box-shadow 0.12s ease",
+      }}
+    />
+  );
+}
+
+function ColorToolbar({
+  nodeId,
+  currentColor,
+}: {
+  nodeId: string;
+  currentColor: string;
+}) {
+  const updateColor = useMutation(
+    ({ storage }, fill: string) => {
+      const flow = storage.get("flow");
+      if (!flow) return;
+      const lbNode = flow.get("nodes").get(nodeId);
+      if (!lbNode) return;
+      const lbData = lbNode.get("data") as unknown as {
+        set(k: string, v: unknown): void;
+      };
+      lbData.set("color", fill);
+    },
+    [nodeId]
+  );
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: "calc(100% + 8px)",
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        gap: 4,
+        padding: "4px 6px",
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border-default)",
+        borderRadius: 10,
+        zIndex: 10,
+        whiteSpace: "nowrap",
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {NODE_COLORS.map((pair) => (
+        <ColorSwatch
+          key={pair.fill}
+          fill={pair.fill}
+          text={pair.text}
+          isActive={pair.fill === currentColor}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateColor(pair.fill);
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface ShapeBodyProps {
   shape: NodeShape;
   color: string;
@@ -136,6 +227,7 @@ export function CanvasNodeComponent({ id, data, selected }: NodeProps<CanvasNode
       style={{ width: "100%", height: "100%", position: "relative" }}
       onDoubleClick={startEditing}
     >
+      {selected && <ColorToolbar nodeId={id} currentColor={data.color} />}
       <NodeResizer
         isVisible={selected}
         minWidth={MIN_NODE_WIDTH}
