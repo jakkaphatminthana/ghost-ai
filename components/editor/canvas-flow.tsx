@@ -11,14 +11,23 @@ import {
   ConnectionMode,
   Panel,
   useReactFlow,
+  MarkerType,
 } from "@xyflow/react";
 import { useLiveblocksFlow } from "@liveblocks/react-flow";
 import type { CanvasNode, CanvasEdge, NodeShape } from "@/types/canvas";
 import { NODE_COLORS, NODE_SHAPES } from "@/types/canvas";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
+import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
 import { ShapePanel } from "@/components/editor/shape-panel";
 
 const nodeTypes = { canvasNode: CanvasNodeComponent };
+
+const edgeTypes = { canvasEdge: CanvasEdgeComponent };
+
+const defaultEdgeOptions = {
+  type: "canvasEdge",
+  markerEnd: { type: MarkerType.ArrowClosed },
+} as const;
 
 interface ShapeDragPayload {
   shape: NodeShape;
@@ -107,6 +116,8 @@ function CanvasFlowInner() {
       onDragOver={onDragOver}
       onDrop={onDrop}
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      defaultEdgeOptions={defaultEdgeOptions}
       connectionMode={ConnectionMode.Loose}
       fitView
     >
