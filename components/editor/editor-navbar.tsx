@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Share2, Sparkles, Upload } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,7 @@ interface EditorNavbarProps {
   onShareClick?: () => void;
   isAiSidebarOpen?: boolean;
   onAiSidebarToggle?: () => void;
+  onTemplatesClick?: () => void;
 }
 
 export function EditorNavbar({
@@ -20,6 +21,7 @@ export function EditorNavbar({
   onShareClick,
   isAiSidebarOpen,
   onAiSidebarToggle,
+  onTemplatesClick,
 }: EditorNavbarProps) {
   return (
     <header className="h-12 flex items-center px-3 bg-bg-surface border-b border-border-default shrink-0">
@@ -46,6 +48,17 @@ export function EditorNavbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-1">
+        {onTemplatesClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onTemplatesClick}
+            className="h-8 gap-1.5 text-text-muted hover:text-text-primary hover:bg-bg-elevated"
+          >
+            <Upload className="h-4 w-4" />
+            Import
+          </Button>
+        )}
         {onShareClick && (
           <Button
             variant="ghost"
