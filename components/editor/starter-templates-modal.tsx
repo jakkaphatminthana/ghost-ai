@@ -194,7 +194,7 @@ export function StarterTemplatesModal({
         </DialogHeader>
 
         <div className="overflow-y-auto max-h-[65vh] px-8 pb-8">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {templates.map((tpl) => (
               <div
                 key={tpl.id}

@@ -87,9 +87,11 @@ function CanvasFlowInner({
         ...edges.map((ed) => ({ type: "remove" as const, id: ed.id })),
         ...template.edges.map((ed) => ({ type: "add" as const, item: ed })),
       ]);
-      setTimeout(() => {
-        rfInstance.fitView({ duration: 300 });
-      }, 50);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          rfInstance.fitView({ duration: 300 });
+        });
+      });
     },
     [nodes, edges, onNodesChange, onEdgesChange, rfInstance]
   );
