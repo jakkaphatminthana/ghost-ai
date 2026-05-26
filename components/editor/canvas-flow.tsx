@@ -1,6 +1,7 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
+import "@liveblocks/react-flow/styles.css";
 import { useCallback } from "react";
 import {
   ReactFlow,
@@ -13,7 +14,7 @@ import {
   useReactFlow,
   MarkerType,
 } from "@xyflow/react";
-import { useLiveblocksFlow } from "@liveblocks/react-flow";
+import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow";
 import { useUndo, useRedo } from "@liveblocks/react";
 import type { CanvasNode, CanvasEdge, NodeShape } from "@/types/canvas";
 import { NODE_COLORS, NODE_SHAPES } from "@/types/canvas";
@@ -25,6 +26,8 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 import { CANVAS_TEMPLATES } from "@/components/editor/starter-templates";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import { LiveCursor } from "@/components/editor/live-cursors";
+import { PresenceAvatars } from "@/components/editor/presence-avatars";
 
 const nodeTypes = { canvasNode: CanvasNodeComponent };
 
@@ -173,12 +176,16 @@ function CanvasFlowInner({
         maskColor="rgba(0,0,0,0.6)"
         nodeColor="var(--border-subtle)"
       />
+      <Panel position="top-right" className="mt-2 mr-2">
+        <PresenceAvatars />
+      </Panel>
       <Panel position="bottom-left" className="mb-4 ml-4">
         <CanvasControls />
       </Panel>
       <Panel position="bottom-center" className="mb-4">
         <ShapePanel />
       </Panel>
+      <Cursors components={{ Cursor: LiveCursor }} />
       <StarterTemplatesModal
         open={isTemplatesOpen}
         onOpenChange={(open) => { if (!open) onTemplatesClose(); }}
