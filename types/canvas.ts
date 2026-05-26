@@ -14,8 +14,12 @@ export interface CanvasNodeData extends Record<string, unknown> {
   shape: NodeShape;
 }
 
+export interface CanvasEdgeData extends Record<string, unknown> {
+  label?: string;
+}
+
 export type CanvasNode = Node<CanvasNodeData, "canvasNode">;
-export type CanvasEdge = Edge<Record<string, unknown>, "canvasEdge">;
+export type CanvasEdge = Edge<CanvasEdgeData, "canvasEdge">;
 
 export const NODE_COLORS = [
   { fill: "#1F1F1F", text: "#EDEDED" },

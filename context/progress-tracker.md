@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 12: Shape Panel (complete)
+- TBD
 
 ## Current Goal
 
-- Add a bottom shape panel so users can drag shapes onto the canvas and create new nodes.
+- TBD
 
 ## Completed
 
@@ -24,6 +24,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - 10-liveblocks-setup: `liveblocks.config.ts` typed with `Presence` (cursor + isThinking) and `UserMeta` (name, avatar, color). `lib/liveblocks.ts` exports cached `Liveblocks` node client and `getUserColor` deterministic color helper. `POST /api/liveblocks-auth` verifies Clerk auth + project access, ensures room exists via `getOrCreateRoom`/`updateRoom`, and returns an ID-token session with name, avatar, and cursor color. `npm run build` passes.
 - 11-base-canvas: `types/canvas.ts` defines `CanvasNodeData`, `CanvasNode`, `CanvasEdge`, `NODE_COLORS`, `NODE_SHAPES`. `liveblocks.config.ts` Storage typed as `{ flow: LiveblocksFlow<CanvasNode, CanvasEdge> }`. `canvas-room.tsx` wraps `LiveblocksProvider` + `RoomProvider` with initial presence/storage, `ClientSideSuspense` loading state, and class-based error fallback. `canvas-flow.tsx` uses `useLiveblocksFlow` with suspense, renders `ReactFlow` with `ConnectionMode.Loose`, `fitView`, `MiniMap`, and dot-pattern `Background`. Canvas placeholder replaced in `workspace-shell.tsx`. `npm run build` passes.
 - 12-shape-panel: `canvas-node.tsx` custom node renderer (bordered rectangle, centered label, 4 handles). `shape-panel.tsx` floating pill toolbar with 6 draggable shape buttons (rectangle, diamond, circle, pill, cylinder, hexagon) and `application/ghost-shape` drag payload. `canvas-flow.tsx` wrapped in `ReactFlowProvider`; inner component uses `useReactFlow` for `screenToFlowPosition` and drops via `onNodesChange([{ type: "add", item }])`. `npm run build` passes.
+- 13-node-shape: `canvas-node.tsx` replaced with proper shape rendering — rectangle/pill/circle via CSS border-radius, diamond/hexagon/cylinder via inline SVG with `vectorEffect="non-scaling-stroke"`. `shape-panel.tsx` extended with ghost drag preview: suppresses browser default ghost via transparent GIF, tracks cursor via document `dragover`, renders a fixed-position portal following the cursor. `npm run build` passes.
+- 14-node-editing: `canvas-node.tsx` extended with `NodeResizer` (subtle 7px handles, accent-primary color, 80×40 minimum) and inline label editing — double-click opens a transparent textarea overlay, label updates via `useMutation` directly into Liveblocks storage, closes on blur or Escape, pointer/mouse events stopped on the textarea to prevent canvas drag. Placeholder text shown in `--text-faint` when label is empty. `npm run build` passes.
+- 15-node-color-toolbar: `ColorSwatch` and `ColorToolbar` components added to `canvas-node.tsx`. Toolbar floats 8px above selected nodes via `position: absolute; bottom: calc(100% + 8px)`. Shows 8 swatches (one per `NODE_COLORS` pair); active swatch gets a text-color ring, hover shows a tight glow (`${text}33` box-shadow). Swatch click calls `useMutation` to set `data.color` in Liveblocks storage; text color is derived from the pair automatically. Mouse/pointer events stopped on toolbar to prevent canvas drag. `npm run build` passes.
+- 16-edge-behavior: `CanvasEdgeComponent` in `canvas-edge.tsx` — right-angle routing via `getSmoothStepPath`, wide transparent hit area (20px), thin visible stroke dimmed at rest (`var(--text-faint)`) / bright when selected (`var(--text-primary)`), `MarkerType.ArrowClosed` arrowhead, `EdgeLabelRenderer` + path midpoint for label position, inline label editing (grows with text, save on blur/Enter, cancel on Escape), pill badges for saved labels, faint "add label…" hint when edge is selected and empty, collaborative updates via `useMutation`. All 4 handles made `type="source"` bidirectional with CSS hover-reveal. `npm run build` passes.
+- 17-canvas-ergonomics: `CanvasControls` component in `canvas-controls.tsx` — pill-shaped bar at bottom-left with zoom out/fit view/zoom in (animated via duration option) and undo/redo (disabled+dimmed when unavailable) using Liveblocks `useUndo`/`useRedo`/`useCanUndo`/`useCanRedo`. `useKeyboardShortcuts` hook in `hooks/useKeyboardShortcuts.ts` listens on `window` for `+`/`=` zoom in, `-` zoom out, `Cmd/Ctrl+Z` undo, `Cmd/Ctrl+Shift+Z` and `Cmd/Ctrl+Y` redo; skips editable targets. Wired into `canvas-flow.tsx`. `npm run build` passes.
 
 ## In Progress
 
@@ -31,7 +36,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 13: Shape-specific node visuals (diamond SVG, hexagon SVG, cylinder SVG, pill CSS, circle CSS).
+- TBD
 
 ## Open Questions
 
