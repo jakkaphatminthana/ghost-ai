@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
+import { AISidebar } from "@/components/editor/ai-sidebar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareDialog } from "@/components/editor/share-dialog";
@@ -77,16 +78,10 @@ export function WorkspaceShell({
           />
         </main>
 
-        {isAiSidebarOpen && (
-          <aside className="flex w-80 shrink-0 flex-col border-l border-border-default bg-bg-surface">
-            <div className="flex h-12 shrink-0 items-center border-b border-border-default px-4">
-              <span className="text-sm font-medium text-text-primary">AI Assistant</span>
-            </div>
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-sm text-text-muted">AI chat coming soon</p>
-            </div>
-          </aside>
-        )}
+        <AISidebar
+          isOpen={isAiSidebarOpen}
+          onClose={() => setIsAiSidebarOpen(false)}
+        />
       </div>
 
       <ProjectDialogs

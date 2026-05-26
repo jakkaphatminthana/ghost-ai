@@ -43,7 +43,7 @@ export function CanvasRoom({ roomId, isTemplatesOpen, onTemplatesClose }: Canvas
       <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
         <RoomProvider
           id={roomId}
-          initialPresence={{ cursor: null, isThinking: false }}
+          initialPresence={{ cursor: null, thinking: false }}
           initialStorage={() => ({
             flow: new LiveObject({
               nodes: new LiveMap(),

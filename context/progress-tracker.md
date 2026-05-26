@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 18: Starter Templates
+Feature 20: AI Sidebar Shell
 
 ## Current Goal
 
-Build starter template library with SVG preview modal and canvas import.
+Build the AI sidebar UI — header, AI Architect tab (empty state, chat, input), and Specs tab (generate button, demo card). Separate into its own component.
 
 ## Completed
 
@@ -30,6 +30,8 @@ Build starter template library with SVG preview modal and canvas import.
 - 16-edge-behavior: `CanvasEdgeComponent` in `canvas-edge.tsx` — right-angle routing via `getSmoothStepPath`, wide transparent hit area (20px), thin visible stroke dimmed at rest (`var(--text-faint)`) / bright when selected (`var(--text-primary)`), `MarkerType.ArrowClosed` arrowhead, `EdgeLabelRenderer` + path midpoint for label position, inline label editing (grows with text, save on blur/Enter, cancel on Escape), pill badges for saved labels, faint "add label…" hint when edge is selected and empty, collaborative updates via `useMutation`. All 4 handles made `type="source"` bidirectional with CSS hover-reveal. `npm run build` passes.
 - 17-canvas-ergonomics: `CanvasControls` component in `canvas-controls.tsx` — pill-shaped bar at bottom-left with zoom out/fit view/zoom in (animated via duration option) and undo/redo (disabled+dimmed when unavailable) using Liveblocks `useUndo`/`useRedo`/`useCanUndo`/`useCanRedo`. `useKeyboardShortcuts` hook in `hooks/useKeyboardShortcuts.ts` listens on `window` for `+`/`=` zoom in, `-` zoom out, `Cmd/Ctrl+Z` undo, `Cmd/Ctrl+Shift+Z` and `Cmd/Ctrl+Y` redo; skips editable targets. Wired into `canvas-flow.tsx`. `npm run build` passes.
 - 18-starter-templates: `CANVAS_TEMPLATES` with microservices, CI/CD pipeline, and event-driven templates in `starter-templates.ts`. `StarterTemplatesModal` dialog with 3-column card grid, SVG previews (bounding-box scaled, no React Flow), name/description, and full-width Import button. Import handler in `CanvasFlowInner` replaces all nodes/edges via `onNodesChange`/`onEdgesChange` then calls `fitView`. Navbar "Import" button (Upload icon) in `EditorNavbar`. State threaded through `WorkspaceShell → CanvasRoom → CanvasFlow`. `npm run build` passes.
+- 19-presence-avatars-cursors: `PresenceAvatars` in canvas `Panel position="top-right"` — filters `useOthers` excluding current Clerk user, overlapping avatar stack (up to 5) with +N overflow, divider only when collaborators exist, Clerk `UserButton` at end. `LiveCursor` custom component for `@liveblocks/react-flow` `<Cursors>` — colored SVG pointer + name badge using `other.info.color`. Presence type updated: `isThinking` → `thinking`. `npm run build` passes.
+- 20-ai-sidebar-shell: `AISidebar` extracted into `ai-sidebar.tsx` — floating `fixed right-0` with `translate-x-full`/`translate-x-0` slide animation. Header with Bot icon, "AI Workspace" title, subtitle, close button. Two tabs (AI Architect / Specs) using Base UI Tabs with `bg-accent-ai` active styling. AI Architect tab: empty state with 3 starter chips, scrollable chat (user right-aligned `bg-accent-primary-dim`, assistant left-aligned `bg-bg-elevated`), auto-resizing textarea (72–160px), Send button. Specs tab: Generate Spec button and static demo card with FileText icon, title, snippet, disabled Download. Placeholder in `workspace-shell.tsx` replaced. `npm run build` passes.
 
 ## In Progress
 
@@ -37,7 +39,7 @@ Build starter template library with SVG preview modal and canvas import.
 
 ## Next Up
 
-- TBD
+- Feature 21 (TBD)
 
 ## Open Questions
 
