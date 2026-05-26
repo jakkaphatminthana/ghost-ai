@@ -22,6 +22,9 @@ import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { CanvasControls } from "@/components/editor/canvas-controls";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
+import { CANVAS_TEMPLATES } from "@/components/editor/starter-templates";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
 
 const nodeTypes = { canvasNode: CanvasNodeComponent };
 
@@ -42,15 +45,29 @@ function generateNodeId(shape: NodeShape): string {
   return `${shape}-${crypto.randomUUID()}`;
 }
 
-export function CanvasFlow() {
+interface CanvasFlowProps {
+  isTemplatesOpen: boolean;
+  onTemplatesClose: () => void;
+}
+
+export function CanvasFlow({ isTemplatesOpen, onTemplatesClose }: CanvasFlowProps) {
   return (
     <ReactFlowProvider>
-      <CanvasFlowInner />
+      <CanvasFlowInner
+        isTemplatesOpen={isTemplatesOpen}
+        onTemplatesClose={onTemplatesClose}
+      />
     </ReactFlowProvider>
   );
 }
 
-function CanvasFlowInner() {
+function CanvasFlowInner({
+  isTemplatesOpen,
+  onTemplatesClose,
+}: {
+  isTemplatesOpen: boolean;
+  onTemplatesClose: () => void;
+}) {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({ suspense: true });
 
@@ -59,6 +76,25 @@ function CanvasFlowInner() {
   const undo = useUndo();
   const redo = useRedo();
   useKeyboardShortcuts({ rfInstance, undo, redo });
+
+  const handleImport = useCallback(
+    (template: CanvasTemplate) => {
+      onNodesChange([
+        ...nodes.map((nd) => ({ type: "remove" as const, id: nd.id })),
+        ...template.nodes.map((nd) => ({ type: "add" as const, item: nd })),
+      ]);
+      onEdgesChange([
+        ...edges.map((ed) => ({ type: "remove" as const, id: ed.id })),
+        ...template.edges.map((ed) => ({ type: "add" as const, item: ed })),
+      ]);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          rfInstance.fitView({ duration: 300 });
+        });
+      });
+    },
+    [nodes, edges, onNodesChange, onEdgesChange, rfInstance]
+  );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -143,6 +179,12 @@ function CanvasFlowInner() {
       <Panel position="bottom-center" className="mb-4">
         <ShapePanel />
       </Panel>
+      <StarterTemplatesModal
+        open={isTemplatesOpen}
+        onOpenChange={(open) => { if (!open) onTemplatesClose(); }}
+        onImport={handleImport}
+        templates={CANVAS_TEMPLATES}
+      />
     </ReactFlow>
   );
 }

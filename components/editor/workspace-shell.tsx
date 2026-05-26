@@ -27,6 +27,7 @@ export function WorkspaceShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
 
   const {
     dialogType,
@@ -53,6 +54,7 @@ export function WorkspaceShell({
         onShareClick={() => setIsShareOpen(true)}
         isAiSidebarOpen={isAiSidebarOpen}
         onAiSidebarToggle={() => setIsAiSidebarOpen((prev) => !prev)}
+        onTemplatesClick={() => setIsTemplatesOpen(true)}
       />
 
       <div className="relative flex-1 overflow-hidden flex">
@@ -68,7 +70,11 @@ export function WorkspaceShell({
         />
 
         <main className="flex-1 overflow-hidden">
-          <CanvasRoom roomId={activeProjectId} />
+          <CanvasRoom
+            roomId={activeProjectId}
+            isTemplatesOpen={isTemplatesOpen}
+            onTemplatesClose={() => setIsTemplatesOpen(false)}
+          />
         </main>
 
         {isAiSidebarOpen && (
