@@ -41,9 +41,10 @@ export function CanvasEdgeComponent({
       if (!flow) return;
       const lbEdge = flow.get("edges").get(id);
       if (!lbEdge) return;
-      const lbData = lbEdge.get("data") as unknown as {
-        set(k: string, v: unknown): void;
-      };
+      const lbData = lbEdge.get("data") as
+        | { set(k: string, v: unknown): void }
+        | undefined;
+      if (!lbData || typeof lbData.set !== "function") return;
       lbData.set("label", label);
     },
     [id]

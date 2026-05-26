@@ -17,6 +17,8 @@ function ControlButton({
 }) {
   return (
     <button
+      type="button"
+      aria-label={title}
       onClick={onClick}
       disabled={disabled}
       title={title}
@@ -36,10 +38,16 @@ export function CanvasControls() {
 
   return (
     <div className="flex items-center gap-1 rounded-full border border-border-default bg-bg-elevated px-3 py-2 shadow-lg">
-      <ControlButton onClick={() => zoomOut({ duration: 200 })} title="Zoom out">
+      <ControlButton
+        onClick={() => zoomOut({ duration: 200 })}
+        title="Zoom out"
+      >
         <ZoomOut className="h-4 w-4" />
       </ControlButton>
-      <ControlButton onClick={() => fitView({ duration: 300 })} title="Fit view">
+      <ControlButton
+        onClick={() => fitView({ duration: 300 })}
+        title="Fit view"
+      >
         <Maximize2 className="h-4 w-4" />
       </ControlButton>
       <ControlButton onClick={() => zoomIn({ duration: 200 })} title="Zoom in">
