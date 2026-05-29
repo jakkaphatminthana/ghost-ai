@@ -41,11 +41,18 @@ export function CanvasEdgeComponent({
       if (!flow) return;
       const lbEdge = flow.get("edges").get(id);
       if (!lbEdge) return;
-      const lbData = lbEdge.get("data") as
+      // Cast through unknown: Liveblocks' onConnect uses addEdge(connection, [])
+      // without merging defaultEdgeOptions, so edges drawn by the user land in
+      // storage without a data field. The static type does not reflect this.
+      const lbData = lbEdge.get("data") as unknown as
         | { set(k: string, v: unknown): void }
         | undefined;
-      if (!lbData || typeof lbData.set !== "function") return;
-      lbData.set("label", label);
+      const lbEdgeRaw = lbEdge as unknown as { set(k: string, v: unknown): void };
+      if (lbData && typeof lbData.set === "function") {
+        lbData.set("label", label);
+      } else {
+        lbEdgeRaw.set("data", { label });
+      }
     },
     [id]
   );
@@ -114,6 +121,7 @@ export function CanvasEdgeComponent({
               onChange={(e) => setDraft(e.target.value)}
               onBlur={() => { if (editing) commit(); }}
               onKeyDown={handleKeyDown}
+              size={Math.max(draft.length + 2, 6)}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
@@ -125,8 +133,6 @@ export function CanvasEdgeComponent({
                 padding: "2px 8px",
                 fontSize: 12,
                 outline: "none",
-                minWidth: 40,
-                width: `${Math.max((draft.length || 1) * 8, 40)}px`,
                 fontFamily: "inherit",
               }}
             />

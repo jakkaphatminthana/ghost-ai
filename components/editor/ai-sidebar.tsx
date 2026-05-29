@@ -33,7 +33,7 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
     if (!text) return;
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), role: "user", content: text },
+      { id: crypto.randomUUID(), role: "user", content: text },
     ]);
     setInput("");
   }

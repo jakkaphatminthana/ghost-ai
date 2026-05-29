@@ -33,11 +33,12 @@ class CanvasErrorBoundary extends Component<
 
 interface CanvasRoomProps {
   roomId: string;
+  projectId: string;
   isTemplatesOpen: boolean;
   onTemplatesClose: () => void;
 }
 
-export function CanvasRoom({ roomId, isTemplatesOpen, onTemplatesClose }: CanvasRoomProps) {
+export function CanvasRoom({ roomId, projectId, isTemplatesOpen, onTemplatesClose }: CanvasRoomProps) {
   return (
     <CanvasErrorBoundary>
       <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
@@ -59,9 +60,10 @@ export function CanvasRoom({ roomId, isTemplatesOpen, onTemplatesClose }: Canvas
             }
           >
             <CanvasFlow
-            isTemplatesOpen={isTemplatesOpen}
-            onTemplatesClose={onTemplatesClose}
-          />
+              projectId={projectId}
+              isTemplatesOpen={isTemplatesOpen}
+              onTemplatesClose={onTemplatesClose}
+            />
           </ClientSideSuspense>
         </RoomProvider>
       </LiveblocksProvider>

@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 20: AI Sidebar Shell
+Feature 21: Canvas Autosave
 
 ## Current Goal
 
-Build the AI sidebar UI — header, AI Architect tab (empty state, chat, input), and Specs tab (generate button, demo card). Separate into its own component.
+Add autosave and loading for the collaborative canvas so project state is persisted. Canvas JSON stored in Vercel Blob; blob URL stored on the Prisma project record (`canvasJsonPath`).
 
 ## Completed
 
@@ -32,6 +32,7 @@ Build the AI sidebar UI — header, AI Architect tab (empty state, chat, input),
 - 18-starter-templates: `CANVAS_TEMPLATES` with microservices, CI/CD pipeline, and event-driven templates in `starter-templates.ts`. `StarterTemplatesModal` dialog with 3-column card grid, SVG previews (bounding-box scaled, no React Flow), name/description, and full-width Import button. Import handler in `CanvasFlowInner` replaces all nodes/edges via `onNodesChange`/`onEdgesChange` then calls `fitView`. Navbar "Import" button (Upload icon) in `EditorNavbar`. State threaded through `WorkspaceShell → CanvasRoom → CanvasFlow`. `npm run build` passes.
 - 19-presence-avatars-cursors: `PresenceAvatars` in canvas `Panel position="top-right"` — filters `useOthers` excluding current Clerk user, overlapping avatar stack (up to 5) with +N overflow, divider only when collaborators exist, Clerk `UserButton` at end. `LiveCursor` custom component for `@liveblocks/react-flow` `<Cursors>` — colored SVG pointer + name badge using `other.info.color`. Presence type updated: `isThinking` → `thinking`. `npm run build` passes.
 - 20-ai-sidebar-shell: `AISidebar` extracted into `ai-sidebar.tsx` — floating `fixed right-0` with `translate-x-full`/`translate-x-0` slide animation. Header with Bot icon, "AI Workspace" title, subtitle, close button. Two tabs (AI Architect / Specs) using Base UI Tabs with `bg-accent-ai` active styling. AI Architect tab: empty state with 3 starter chips, scrollable chat (user right-aligned `bg-accent-primary-dim`, assistant left-aligned `bg-bg-elevated`), auto-resizing textarea (72–160px), Send button. Specs tab: Generate Spec button and static demo card with FileText icon, title, snippet, disabled Download. Placeholder in `workspace-shell.tsx` replaced. `npm run build` passes.
+- 21-canvas-autosave: `@vercel/blob` installed. `PUT/GET /api/projects/[projectId]/canvas` routes upload canvas JSON to Vercel Blob and store the URL in `project.canvasJsonPath`. `useCanvasAutosave` hook debounces saves (2 s) and tracks `idle | saving | saved | error` status. `CanvasFlowInner` loads saved canvas on mount if the Liveblocks room is empty; shows a floating save-status Panel (top-left). `projectId` threaded through `CanvasRoom` → `CanvasFlow`. `npm run build` passes.
 
 ## In Progress
 
@@ -39,7 +40,7 @@ Build the AI sidebar UI — header, AI Architect tab (empty state, chat, input),
 
 ## Next Up
 
-- Feature 21 (TBD)
+- Feature 22 (TBD)
 
 ## Open Questions
 

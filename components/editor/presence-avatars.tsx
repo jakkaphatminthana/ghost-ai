@@ -2,7 +2,6 @@
 
 import { useOthers } from "@liveblocks/react/suspense";
 import { useAuth } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
 
 const MAX_VISIBLE = 5;
 
@@ -86,11 +85,6 @@ export function PresenceAvatars() {
         </div>
       )}
 
-      {visible.length > 0 && (
-        <div className="h-5 w-px bg-border-default mx-0.5" />
-      )}
-
-      <UserButton />
     </div>
   );
 }
