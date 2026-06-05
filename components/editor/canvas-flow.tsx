@@ -2,7 +2,7 @@
 
 import "@xyflow/react/dist/style.css";
 import "@liveblocks/react-flow/styles.css";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -28,6 +28,8 @@ import { CANVAS_TEMPLATES } from "@/components/editor/starter-templates";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { LiveCursor } from "@/components/editor/live-cursors";
 import { PresenceAvatars } from "@/components/editor/presence-avatars";
+import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
+import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 
 const nodeTypes = { canvasNode: CanvasNodeComponent };
 
@@ -48,15 +50,24 @@ function generateNodeId(shape: NodeShape): string {
   return `${shape}-${crypto.randomUUID()}`;
 }
 
+const SAVE_STATUS_LABEL: Record<SaveStatus, string | null> = {
+  idle: null,
+  saving: "Saving…",
+  saved: "Saved",
+  error: "Error saving",
+};
+
 interface CanvasFlowProps {
+  projectId: string;
   isTemplatesOpen: boolean;
   onTemplatesClose: () => void;
 }
 
-export function CanvasFlow({ isTemplatesOpen, onTemplatesClose }: CanvasFlowProps) {
+export function CanvasFlow({ projectId, isTemplatesOpen, onTemplatesClose }: CanvasFlowProps) {
   return (
     <ReactFlowProvider>
       <CanvasFlowInner
+        projectId={projectId}
         isTemplatesOpen={isTemplatesOpen}
         onTemplatesClose={onTemplatesClose}
       />
@@ -65,9 +76,11 @@ export function CanvasFlow({ isTemplatesOpen, onTemplatesClose }: CanvasFlowProp
 }
 
 function CanvasFlowInner({
+  projectId,
   isTemplatesOpen,
   onTemplatesClose,
 }: {
+  projectId: string;
   isTemplatesOpen: boolean;
   onTemplatesClose: () => void;
 }) {
@@ -79,6 +92,40 @@ function CanvasFlowInner({
   const undo = useUndo();
   const redo = useRedo();
   useKeyboardShortcuts({ rfInstance, undo, redo });
+
+  const saveStatus = useCanvasAutosave(projectId, nodes, edges);
+
+  const hasAttemptedLoadRef = useRef(false);
+
+  useEffect(() => {
+    if (hasAttemptedLoadRef.current) return;
+    hasAttemptedLoadRef.current = true;
+
+    if (nodes.length > 0 || edges.length > 0) return;
+
+    async function loadSavedCanvas() {
+      try {
+        const res = await fetch(`/api/projects/${projectId}/canvas`);
+        if (!res.ok) return;
+        const data = (await res.json()) as { nodes: CanvasNode[]; edges: CanvasEdge[] };
+        if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) return;
+        if (data.nodes.length === 0 && data.edges.length === 0) return;
+
+        onNodesChange(data.nodes.map((nd) => ({ type: "add" as const, item: nd })));
+        onEdgesChange(data.edges.map((ed) => ({ type: "add" as const, item: ed })));
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            rfInstance.fitView({ duration: 300 });
+          });
+        });
+      } catch {
+        // Room stays empty if load fails
+      }
+    }
+
+    loadSavedCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleImport = useCallback(
     (template: CanvasTemplate) => {
@@ -151,6 +198,8 @@ function CanvasFlowInner({
     [screenToFlowPosition, onNodesChange]
   );
 
+  const statusLabel = SAVE_STATUS_LABEL[saveStatus];
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -183,7 +232,18 @@ function CanvasFlowInner({
         <CanvasControls />
       </Panel>
       <Panel position="bottom-center" className="mb-4">
-        <ShapePanel />
+        <div className="flex flex-col items-center gap-1.5">
+          {statusLabel && (
+            <span
+              className={`text-xs px-2 py-1 rounded-xl bg-bg-elevated ${
+                saveStatus === "error" ? "text-state-error" : "text-text-muted"
+              }`}
+            >
+              {statusLabel}
+            </span>
+          )}
+          <ShapePanel />
+        </div>
       </Panel>
       <Cursors components={{ Cursor: LiveCursor }} />
       <StarterTemplatesModal

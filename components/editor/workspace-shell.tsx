@@ -73,6 +73,7 @@ export function WorkspaceShell({
         <main className="flex-1 overflow-hidden">
           <CanvasRoom
             roomId={activeProjectId}
+            projectId={activeProjectId}
             isTemplatesOpen={isTemplatesOpen}
             onTemplatesClose={() => setIsTemplatesOpen(false)}
           />
