@@ -50,6 +50,9 @@ export function CanvasEdgeComponent({
       const lbEdgeRaw = lbEdge as unknown as { set(k: string, v: unknown): void };
       if (lbData && typeof lbData.set === "function") {
         lbData.set("label", label);
+      } else if (lbData) {
+        // Plain object (not a LiveBlocks Map) — merge to preserve sibling CanvasEdgeData fields
+        lbEdgeRaw.set("data", { ...(lbData as Record<string, unknown>), label });
       } else {
         lbEdgeRaw.set("data", { label });
       }

@@ -13,6 +13,7 @@ export function useCanvasAutosave(
 ): SaveStatus {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMountRef = useRef(true)
 
   useEffect(() => {
@@ -33,7 +34,8 @@ export function useCanvasAutosave(
         })
         if (res.ok) {
           setSaveStatus('saved')
-          setTimeout(() => setSaveStatus('idle'), 2000)
+          if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+          idleTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000)
         } else {
           setSaveStatus('error')
         }
@@ -44,6 +46,7 @@ export function useCanvasAutosave(
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
     }
   }, [projectId, nodes, edges, debounceMs])
 
