@@ -1,8 +1,10 @@
 "use client";
 
-import { ZoomIn, ZoomOut, Maximize2, Undo2, Redo2 } from "lucide-react";
+import { useState } from "react";
+import { ZoomIn, ZoomOut, Maximize2, Undo2, Redo2, Keyboard } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useUndo, useRedo, useCanUndo, useCanRedo } from "@liveblocks/react";
+import { KeyboardShortcutsModal } from "@/components/editor/keyboard-shortcuts-modal";
 
 function ControlButton({
   onClick,
@@ -35,31 +37,46 @@ export function CanvasControls() {
   const redo = useRedo();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   return (
-    <div className="flex items-center gap-1 rounded-full border border-border-default bg-bg-elevated px-3 py-2 shadow-lg">
-      <ControlButton
-        onClick={() => zoomOut({ duration: 200 })}
-        title="Zoom out"
-      >
-        <ZoomOut className="h-4 w-4" />
-      </ControlButton>
-      <ControlButton
-        onClick={() => fitView({ duration: 300 })}
-        title="Fit view"
-      >
-        <Maximize2 className="h-4 w-4" />
-      </ControlButton>
-      <ControlButton onClick={() => zoomIn({ duration: 200 })} title="Zoom in">
-        <ZoomIn className="h-4 w-4" />
-      </ControlButton>
-      <div className="mx-1 h-5 w-px bg-border-default" />
-      <ControlButton onClick={undo} disabled={!canUndo} title="Undo">
-        <Undo2 className="h-4 w-4" />
-      </ControlButton>
-      <ControlButton onClick={redo} disabled={!canRedo} title="Redo">
-        <Redo2 className="h-4 w-4" />
-      </ControlButton>
-    </div>
+    <>
+      <div className="flex items-center gap-1 rounded-full border border-border-default bg-bg-elevated px-3 py-2 shadow-lg">
+        <ControlButton
+          onClick={() => zoomOut({ duration: 200 })}
+          title="Zoom out"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </ControlButton>
+        <ControlButton
+          onClick={() => fitView({ duration: 300 })}
+          title="Fit view"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </ControlButton>
+        <ControlButton onClick={() => zoomIn({ duration: 200 })} title="Zoom in">
+          <ZoomIn className="h-4 w-4" />
+        </ControlButton>
+        <div className="mx-1 h-5 w-px bg-border-default" />
+        <ControlButton onClick={undo} disabled={!canUndo} title="Undo">
+          <Undo2 className="h-4 w-4" />
+        </ControlButton>
+        <ControlButton onClick={redo} disabled={!canRedo} title="Redo">
+          <Redo2 className="h-4 w-4" />
+        </ControlButton>
+        <div className="mx-1 h-5 w-px bg-border-default" />
+        <ControlButton
+          onClick={() => setIsShortcutsOpen(true)}
+          title="Keyboard shortcuts"
+        >
+          <Keyboard className="h-4 w-4" />
+        </ControlButton>
+      </div>
+
+      <KeyboardShortcutsModal
+        open={isShortcutsOpen}
+        onOpenChange={setIsShortcutsOpen}
+      />
+    </>
   );
 }
