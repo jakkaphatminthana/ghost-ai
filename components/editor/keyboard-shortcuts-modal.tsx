@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -79,16 +79,10 @@ export function KeyboardShortcutsModal({
   open,
   onOpenChange,
 }: KeyboardShortcutsModalProps) {
-  const [os, setOs] = useState<OS>("mac");
-
-  useEffect(() => {
-    if (
-      typeof navigator !== "undefined" &&
-      !navigator.platform.toLowerCase().startsWith("mac")
-    ) {
-      setOs("win");
-    }
-  }, []);
+  const [os, setOs] = useState<OS>(() => {
+    if (typeof navigator === "undefined") return "mac";
+    return navigator.platform.toLowerCase().startsWith("mac") ? "mac" : "win";
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,6 +95,7 @@ export function KeyboardShortcutsModal({
             <div className="flex items-center rounded-xl border border-border-default bg-bg-subtle p-0.5">
               <button
                 type="button"
+                aria-pressed={os === "mac"}
                 onClick={() => setOs("mac")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition-colors ${
                   os === "mac"
@@ -112,6 +107,7 @@ export function KeyboardShortcutsModal({
               </button>
               <button
                 type="button"
+                aria-pressed={os === "win"}
                 onClick={() => setOs("win")}
                 className={`rounded-lg px-2.5 py-1 text-xs transition-colors ${
                   os === "win"
