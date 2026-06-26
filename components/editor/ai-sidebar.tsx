@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRealtimeRun } from "@trigger.dev/react-hooks";
 import type { designAgentTask } from "@/trigger/design-agent";
+import { useEventListener } from "@liveblocks/react";
+import { isAiStatusPayload, type AiStatusPayload } from "@/types/tasks";
 
 interface Message {
   id: string;
@@ -37,8 +39,29 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [runSession, setRunSession] = useState<RunSession | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiStatusPayload | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEventListener(({ event }) => {
+    if (event.type !== "ai-status") return;
+    const payload: AiStatusPayload = {
+      status: event.status,
+      text: event.message || undefined,
+    };
+    if (!isAiStatusPayload(payload)) return;
+
+    setAiStatus(payload);
+
+    if (payload.status === "start" || payload.status === "processing") {
+      setIsGenerating(true);
+    }
+
+    if (payload.status === "complete" || payload.status === "error") {
+      setIsGenerating(false);
+      setAiStatus(null);
+    }
+  });
 
   const { run } = useRealtimeRun<typeof designAgentTask>(runSession?.runId, {
     accessToken: runSession?.token,
@@ -198,6 +221,14 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
 
         {/* AI Architect */}
         <TabsContent value="architect" className="flex flex-col overflow-hidden">
+          {isGenerating && (
+            <div className="shrink-0 flex items-center gap-2 border-b border-border-subtle bg-accent-ai/10 px-4 py-2">
+              <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent-ai" />
+              <span className="truncate text-xs text-accent-ai-text">
+                {aiStatus?.text ?? "AI is working…"}
+              </span>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && !isGenerating ? (
               <EmptyState onChipClick={handleChip} />
@@ -251,7 +282,11 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
                 disabled={!input.trim() || isGenerating}
                 className="h-9 w-9 shrink-0 bg-accent-ai text-white hover:bg-accent-ai/90 disabled:opacity-40"
               >
-                <Send className="h-4 w-4" />
+                {isGenerating ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>

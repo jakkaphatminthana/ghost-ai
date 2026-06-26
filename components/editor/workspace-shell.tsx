@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
-import { AISidebar } from "@/components/editor/ai-sidebar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareDialog } from "@/components/editor/share-dialog";
@@ -76,15 +75,10 @@ export function WorkspaceShell({
             projectId={activeProjectId}
             isTemplatesOpen={isTemplatesOpen}
             onTemplatesClose={() => setIsTemplatesOpen(false)}
+            isAiSidebarOpen={isAiSidebarOpen}
+            onAiSidebarClose={() => setIsAiSidebarOpen(false)}
           />
         </main>
-
-        <AISidebar
-          isOpen={isAiSidebarOpen}
-          onClose={() => setIsAiSidebarOpen(false)}
-          projectId={activeProjectId}
-          roomId={activeProjectId}
-        />
       </div>
 
       <ProjectDialogs

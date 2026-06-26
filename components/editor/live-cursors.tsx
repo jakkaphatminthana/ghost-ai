@@ -7,6 +7,7 @@ export function LiveCursor({ connectionId }: CursorsCursorProps) {
   const other = useOther(connectionId, (o) => ({
     name: o.info.name,
     color: o.info.color,
+    thinking: o.presence.thinking,
   }));
 
   if (!other) return null;
@@ -32,10 +33,13 @@ export function LiveCursor({ connectionId }: CursorsCursorProps) {
         />
       </svg>
       <div
-        className="mt-0.5 max-w-36 truncate rounded-md px-1.5 py-0.5 text-xs font-medium text-white shadow-sm"
+        className="mt-0.5 flex max-w-36 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-white shadow-sm"
         style={{ backgroundColor: other.color }}
       >
-        {other.name}
+        {other.thinking && (
+          <span className="h-2.5 w-2.5 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        )}
+        <span className="truncate">{other.name}</span>
       </div>
     </div>
   );

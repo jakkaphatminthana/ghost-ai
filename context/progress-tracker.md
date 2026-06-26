@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 23: Design Agent Logic
+Feature 24: AI Presence State
 
 ## Current Goal
 
-Implement the full AI design agent: Groq generates a canvas design from a user prompt, mutations are applied to the shared Liveblocks canvas, AI presence is updated, and status messages are visible to all participants.
+Add shared AI activity indicators: status feed in the AI sidebar visible to all room participants, loading states on chat input/send button, and thinking spinner on live cursor badges.
 
 ## Completed
 
@@ -35,6 +35,7 @@ Implement the full AI design agent: Groq generates a canvas design from a user p
 - 21-canvas-autosave: `@vercel/blob` installed. `PUT/GET /api/projects/[projectId]/canvas` routes upload canvas JSON to Vercel Blob and store the URL in `project.canvasJsonPath`. `useCanvasAutosave` hook debounces saves (2 s) and tracks `idle | saving | saved | error` status. `CanvasFlowInner` loads saved canvas on mount if the Liveblocks room is empty; shows a floating save-status Panel (top-left). `projectId` threaded through `CanvasRoom` → `CanvasFlow`. `npm run build` passes.
 - 22-design-agent-api: `TaskRun` Prisma model with `runId` (unique), `projectId`, `userId`, `createdAt`, and compound index on `userId + projectId`. Migration applied. `POST /api/ai/design` triggers `design-agent` via `tasks.trigger`, creates a `TaskRun` record, returns `runId`. `POST /api/ai/design/token` verifies `TaskRun` ownership then issues a run-scoped public token via `auth.createPublicToken`. `trigger/design-agent.ts` is a minimal task that logs its payload. `npm run build` passes.
 - 23-design-agent-logic: `trigger/design-agent.ts` uses Groq (`meta-llama/llama-4-scout-17b-16e-instruct` via `@ai-sdk/groq`) with a structured Zod schema to generate nodes and edges, applies them via `liveblocks.mutateStorage`, sets AI presence (`thinking: true`) via `liveblocks.setPresence`, and broadcasts status events via `liveblocks.broadcastEvent`. `AISidebar` wired to `POST /api/ai/design` + `POST /api/ai/design/token` with `useRealtimeRun` for live status. `RoomEvent` type added to `liveblocks.config.ts`. `npm run build` passes.
+- 24-ai-presence-state: `types/tasks.ts` defines `AiStatusPayload` and `isAiStatusPayload` type guard. `AISidebar` moved inside `RoomProvider` in `canvas-room.tsx` (removed from `workspace-shell.tsx`) so it can call `useEventListener`. `ai-sidebar.tsx` subscribes to `ai-status` room events via `useEventListener` — drives `isGenerating` for all room participants, shows a status strip with the latest message text, and renders a spinner on the send button during generation. `live-cursors.tsx` reads `thinking` from presence and shows a CSS spin indicator in the cursor name badge. `npm run build` passes.
 
 ## In Progress
 
@@ -42,7 +43,7 @@ Implement the full AI design agent: Groq generates a canvas design from a user p
 
 ## Next Up
 
-- Feature 24 (TBD)
+- Feature 25 (TBD)
 
 ## Open Questions
 
