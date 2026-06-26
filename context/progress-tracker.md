@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 22: Design Agent API
+Feature 23: Design Agent Logic
 
 ## Current Goal
 
-Set up the backend flow for design generation using Trigger.dev. Add the design trigger route, TaskRun Prisma model, run-scoped token route, and minimal design task. No AI logic yet.
+Implement the full AI design agent: Gemini generates a canvas design from a user prompt, mutations are applied to the shared Liveblocks canvas, AI presence is updated, and status messages are visible to all participants.
 
 ## Completed
 
@@ -34,6 +34,7 @@ Set up the backend flow for design generation using Trigger.dev. Add the design 
 - 20-ai-sidebar-shell: `AISidebar` extracted into `ai-sidebar.tsx` — floating `fixed right-0` with `translate-x-full`/`translate-x-0` slide animation. Header with Bot icon, "AI Workspace" title, subtitle, close button. Two tabs (AI Architect / Specs) using Base UI Tabs with `bg-accent-ai` active styling. AI Architect tab: empty state with 3 starter chips, scrollable chat (user right-aligned `bg-accent-primary-dim`, assistant left-aligned `bg-bg-elevated`), auto-resizing textarea (72–160px), Send button. Specs tab: Generate Spec button and static demo card with FileText icon, title, snippet, disabled Download. Placeholder in `workspace-shell.tsx` replaced. `npm run build` passes.
 - 21-canvas-autosave: `@vercel/blob` installed. `PUT/GET /api/projects/[projectId]/canvas` routes upload canvas JSON to Vercel Blob and store the URL in `project.canvasJsonPath`. `useCanvasAutosave` hook debounces saves (2 s) and tracks `idle | saving | saved | error` status. `CanvasFlowInner` loads saved canvas on mount if the Liveblocks room is empty; shows a floating save-status Panel (top-left). `projectId` threaded through `CanvasRoom` → `CanvasFlow`. `npm run build` passes.
 - 22-design-agent-api: `TaskRun` Prisma model with `runId` (unique), `projectId`, `userId`, `createdAt`, and compound index on `userId + projectId`. Migration applied. `POST /api/ai/design` triggers `design-agent` via `tasks.trigger`, creates a `TaskRun` record, returns `runId`. `POST /api/ai/design/token` verifies `TaskRun` ownership then issues a run-scoped public token via `auth.createPublicToken`. `trigger/design-agent.ts` is a minimal task that logs its payload. `npm run build` passes.
+- 23-design-agent-logic: `trigger/design-agent.ts` uses Gemini (`gemini-2.0-flash` via `@ai-sdk/google`) with a structured Zod schema to generate nodes and edges, applies them via `liveblocks.mutateStorage`, sets AI presence (`thinking: true`) via `liveblocks.setPresence`, and broadcasts status events via `liveblocks.broadcastEvent`. `AISidebar` wired to `POST /api/ai/design` + `POST /api/ai/design/token` with `useRealtimeRun` for live status. `RoomEvent` type added to `liveblocks.config.ts`. `npm run build` passes.
 
 ## In Progress
 
@@ -41,7 +42,7 @@ Set up the backend flow for design generation using Trigger.dev. Add the design 
 
 ## Next Up
 
-- Feature 23 (TBD)
+- Feature 24 (TBD)
 
 ## Open Questions
 

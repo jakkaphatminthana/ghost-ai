@@ -82,6 +82,8 @@ export function WorkspaceShell({
         <AISidebar
           isOpen={isAiSidebarOpen}
           onClose={() => setIsAiSidebarOpen(false)}
+          projectId={activeProjectId}
+          roomId={activeProjectId}
         />
       </div>
 

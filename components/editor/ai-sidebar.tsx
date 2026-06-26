@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Bot, Download, FileText, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRealtimeRun } from "@trigger.dev/react-hooks";
+import type { designAgentTask } from "@/trigger/design-agent";
 
 interface Message {
   id: string;
@@ -21,21 +23,115 @@ const STARTER_PROMPTS = [
 interface AISidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  projectId: string;
+  roomId: string;
 }
 
-export function AISidebar({ isOpen, onClose }: AISidebarProps) {
+interface RunSession {
+  runId: string;
+  token: string;
+}
+
+export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [runSession, setRunSession] = useState<RunSession | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  function handleSend() {
+  const { run } = useRealtimeRun<typeof designAgentTask>(runSession?.runId, {
+    accessToken: runSession?.token,
+    enabled: !!runSession,
+    stopOnCompletion: true,
+  });
+
+  // React to run status changes
+  useEffect(() => {
+    if (!run) return;
+
+    const terminal = ["COMPLETED", "FAILED", "CRASHED", "CANCELED", "TIMED_OUT", "SYSTEM_FAILURE", "EXPIRED"];
+    if (!terminal.includes(run.status)) return;
+
+    if (run.status === "COMPLETED") {
+      const output = run.output as { summary: string } | undefined;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: output?.summary ?? "Design complete! Check the canvas.",
+        },
+      ]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Something went wrong generating the design. Please try again.",
+        },
+      ]);
+    }
+
+    setRunSession(null);
+    setIsGenerating(false);
+  }, [run?.status]);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isGenerating]);
+
+  async function handleSend() {
     const text = input.trim();
-    if (!text) return;
+    if (!text || isGenerating) return;
+
     setMessages((prev) => [
       ...prev,
       { id: crypto.randomUUID(), role: "user", content: text },
     ]);
     setInput("");
+    setIsGenerating(true);
+
+    try {
+      // Trigger the design task
+      const designRes = await fetch("/api/ai/design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text, roomId, projectId }),
+      });
+
+      if (!designRes.ok) {
+        throw new Error("Failed to start design generation");
+      }
+
+      const { runId } = (await designRes.json()) as { runId: string };
+
+      // Get a run-scoped public token for realtime tracking
+      const tokenRes = await fetch("/api/ai/design/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+
+      if (!tokenRes.ok) {
+        throw new Error("Failed to get run token");
+      }
+
+      const { token } = (await tokenRes.json()) as { token: string };
+      setRunSession({ runId, token });
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Failed to start the design agent. Please try again.",
+        },
+      ]);
+      setIsGenerating(false);
+    }
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -103,26 +199,38 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
         {/* AI Architect */}
         <TabsContent value="architect" className="flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !isGenerating ? (
               <EmptyState onChipClick={handleChip} />
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
-                >
+              <>
+                {messages.map((msg) => (
                   <div
-                    className={[
-                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
-                      msg.role === "user"
-                        ? "bg-accent-primary-dim border-2 border-accent-primary/50 text-text-primary"
-                        : "bg-bg-elevated border border-border-default text-accent-ai-text",
-                    ].join(" ")}
+                    key={msg.id}
+                    className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
                   >
-                    {msg.content}
+                    <div
+                      className={[
+                        "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
+                        msg.role === "user"
+                          ? "bg-accent-primary-dim border-2 border-accent-primary/50 text-text-primary"
+                          : "bg-bg-elevated border border-border-default text-accent-ai-text",
+                      ].join(" ")}
+                    >
+                      {msg.content}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {isGenerating && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-1.5 rounded-2xl bg-bg-elevated border border-border-default px-3 py-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-bounce" />
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
             )}
           </div>
 
@@ -134,12 +242,13 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask Ghost AI…"
-                className="flex-1 min-h-[72px] max-h-[160px] resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-ai focus-visible:ring-accent-ai/20"
+                disabled={isGenerating}
+                className="flex-1 min-h-18 max-h-40 resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-ai focus-visible:ring-accent-ai/20 disabled:opacity-50"
               />
               <Button
                 size="icon"
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || isGenerating}
                 className="h-9 w-9 shrink-0 bg-accent-ai text-white hover:bg-accent-ai/90 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />

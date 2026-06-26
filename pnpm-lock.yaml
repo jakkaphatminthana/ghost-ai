@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@ai-sdk/google':
         specifier: ^3.0.80
-        version: 3.0.80(zod@3.25.76)
+        version: 3.0.80(zod@4.4.3)
       '@base-ui/react':
         specifier: ^1.4.1
         version: 1.4.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -49,7 +49,7 @@ importers:
         version: 4.4.6(bufferutil@4.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(utf-8-validate@6.0.6)
       '@trigger.dev/sdk':
         specifier: 4.4.6
-        version: 4.4.6(ai@6.0.200(zod@3.25.76))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@3.25.76)
+        version: 4.4.6(ai@6.0.200(zod@4.4.3))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@4.4.3)
       '@vercel/blob':
         specifier: ^2.4.0
         version: 2.4.0
@@ -58,7 +58,7 @@ importers:
         version: 12.10.2(@types/react@19.2.14)(immer@10.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       ai:
         specifier: ^6.0.200
-        version: 6.0.200(zod@3.25.76)
+        version: 6.0.200(zod@4.4.3)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -92,6 +92,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -147,9 +150,19 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/provider-utils@5.0.0':
+    resolution: {integrity: sha512-zj66M02jc6ASYwIgWZowsooDUwaVngeNZQ3H10GwcPMZ+KR6gHMhcUuKl6tkai+JPXTKDyHY1pnszuxRtw2D4A==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider@3.0.10':
     resolution: {integrity: sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw==}
     engines: {node: '>=18'}
+
+  '@ai-sdk/provider@4.0.0':
+    resolution: {integrity: sha512-fr9Gs89prDWiuox/T+kCA+i2cJkHpxU5S+tr4megjTzRC27ZsvFhwjU/+XrqqMbvBUlfmXxTOYWy8ng45dsjIg==}
+    engines: {node: '>=22'}
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -2435,6 +2448,9 @@ packages:
   '@wallet-standard/wallet@1.1.0':
     resolution: {integrity: sha512-Gt8TnSlDZpAl+RWOOAB/kuvC7RpcdWAlFbHNoi4gsXsfaWa1QCT6LBcfIYTPdOZC9OVZUDwqGuGAcqZejDmHjg==}
     engines: {node: '>=16'}
+
+  '@workflow/serde@4.1.0':
+    resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
 
   '@xyflow/react@12.10.2':
     resolution: {integrity: sha512-CgIi6HwlcHXwlkTpr0fxLv/0sRVNZ8IdwKLzzeCscaYBwpvfcH1QFOCeaTCuEn1FQEs/B8CjnTSjhs8udgmBgQ==}
@@ -5902,27 +5918,45 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@3.0.127(zod@3.25.76)':
+  '@ai-sdk/gateway@3.0.127(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)
       '@vercel/oidc': 3.2.0
-      zod: 3.25.76
+      zod: 4.4.3
 
-  '@ai-sdk/google@3.0.80(zod@3.25.76)':
+  '@ai-sdk/google@3.0.80(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
-      zod: 3.25.76
+      '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)
+      zod: 4.4.3
 
-  '@ai-sdk/provider-utils@4.0.27(zod@3.25.76)':
+  '@ai-sdk/groq@4.0.0(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.0
+      '@ai-sdk/provider-utils': 5.0.0(zod@4.4.3)
+      zod: 4.4.3
+
+  '@ai-sdk/provider-utils@4.0.27(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.8
-      zod: 3.25.76
+      zod: 4.4.3
+
+  '@ai-sdk/provider-utils@5.0.0(zod@4.4.3)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.0
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.0.8
+      zod: 4.4.3
 
   '@ai-sdk/provider@3.0.10':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@4.0.0':
     dependencies:
       json-schema: 0.4.0
 
@@ -8227,7 +8261,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@trigger.dev/sdk@4.4.6(ai@6.0.200(zod@3.25.76))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@3.25.76)':
+  '@trigger.dev/sdk@4.4.6(ai@6.0.200(zod@4.4.3))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@4.4.3)':
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.36.0
@@ -8240,9 +8274,9 @@ snapshots:
       ulid: 2.4.0
       uncrypto: 0.1.3
       ws: 8.20.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      zod: 3.25.76
+      zod: 4.4.3
     optionalDependencies:
-      ai: 6.0.200(zod@3.25.76)
+      ai: 6.0.200(zod@4.4.3)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -8539,6 +8573,8 @@ snapshots:
     dependencies:
       '@wallet-standard/base': 1.1.0
 
+  '@workflow/serde@4.1.0': {}
+
   '@xyflow/react@12.10.2(@types/react@19.2.14)(immer@10.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@xyflow/system': 0.0.76
@@ -8592,13 +8628,13 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@6.0.200(zod@3.25.76):
+  ai@6.0.200(zod@4.4.3):
     dependencies:
-      '@ai-sdk/gateway': 3.0.127(zod@3.25.76)
+      '@ai-sdk/gateway': 3.0.127(zod@4.4.3)
       '@ai-sdk/provider': 3.0.10
-      '@ai-sdk/provider-utils': 4.0.27(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)
       '@opentelemetry/api': 1.9.0
-      zod: 3.25.76
+      zod: 4.4.3
 
   ajv-formats@3.0.1(ajv@8.20.0):
     optionalDependencies:
