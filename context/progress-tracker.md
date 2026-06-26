@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 21: Canvas Autosave
+Feature 22: Design Agent API
 
 ## Current Goal
 
-Add autosave and loading for the collaborative canvas so project state is persisted. Canvas JSON stored in Vercel Blob; blob URL stored on the Prisma project record (`canvasJsonPath`).
+Set up the backend flow for design generation using Trigger.dev. Add the design trigger route, TaskRun Prisma model, run-scoped token route, and minimal design task. No AI logic yet.
 
 ## Completed
 
@@ -33,6 +33,7 @@ Add autosave and loading for the collaborative canvas so project state is persis
 - 19-presence-avatars-cursors: `PresenceAvatars` in canvas `Panel position="top-right"` — filters `useOthers` excluding current Clerk user, overlapping avatar stack (up to 5) with +N overflow, divider only when collaborators exist, Clerk `UserButton` at end. `LiveCursor` custom component for `@liveblocks/react-flow` `<Cursors>` — colored SVG pointer + name badge using `other.info.color`. Presence type updated: `isThinking` → `thinking`. `npm run build` passes.
 - 20-ai-sidebar-shell: `AISidebar` extracted into `ai-sidebar.tsx` — floating `fixed right-0` with `translate-x-full`/`translate-x-0` slide animation. Header with Bot icon, "AI Workspace" title, subtitle, close button. Two tabs (AI Architect / Specs) using Base UI Tabs with `bg-accent-ai` active styling. AI Architect tab: empty state with 3 starter chips, scrollable chat (user right-aligned `bg-accent-primary-dim`, assistant left-aligned `bg-bg-elevated`), auto-resizing textarea (72–160px), Send button. Specs tab: Generate Spec button and static demo card with FileText icon, title, snippet, disabled Download. Placeholder in `workspace-shell.tsx` replaced. `npm run build` passes.
 - 21-canvas-autosave: `@vercel/blob` installed. `PUT/GET /api/projects/[projectId]/canvas` routes upload canvas JSON to Vercel Blob and store the URL in `project.canvasJsonPath`. `useCanvasAutosave` hook debounces saves (2 s) and tracks `idle | saving | saved | error` status. `CanvasFlowInner` loads saved canvas on mount if the Liveblocks room is empty; shows a floating save-status Panel (top-left). `projectId` threaded through `CanvasRoom` → `CanvasFlow`. `npm run build` passes.
+- 22-design-agent-api: `TaskRun` Prisma model with `runId` (unique), `projectId`, `userId`, `createdAt`, and compound index on `userId + projectId`. Migration applied. `POST /api/ai/design` triggers `design-agent` via `tasks.trigger`, creates a `TaskRun` record, returns `runId`. `POST /api/ai/design/token` verifies `TaskRun` ownership then issues a run-scoped public token via `auth.createPublicToken`. `trigger/design-agent.ts` is a minimal task that logs its payload. `npm run build` passes.
 
 ## In Progress
 
@@ -40,7 +41,7 @@ Add autosave and loading for the collaborative canvas so project state is persis
 
 ## Next Up
 
-- Feature 22 (TBD)
+- Feature 23 (TBD)
 
 ## Open Questions
 
