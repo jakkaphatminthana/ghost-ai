@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const AI_STATUS_VALUES = [
   "start",
   "processing",
@@ -18,4 +20,19 @@ export function isAiStatusPayload(value: unknown): value is AiStatusPayload {
   if (!AI_STATUS_VALUES.includes(v.status as AiStatusValue)) return false;
   if (v.text !== undefined && typeof v.text !== "string") return false;
   return true;
+}
+
+export const ChatMessageSchema = z.object({
+  id: z.string(),
+  sender: z.string(),
+  role: z.literal("user"),
+  content: z.string().min(1),
+  timestamp: z.number(),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+export function parseChatMessage(value: unknown): ChatMessage | null {
+  const result = ChatMessageSchema.safeParse(value);
+  return result.success ? result.data : null;
 }

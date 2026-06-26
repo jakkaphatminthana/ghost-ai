@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
-import { LiveMap, LiveObject } from "@liveblocks/client";
+import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import {
   LiveblocksProvider,
   RoomProvider,
@@ -60,6 +60,7 @@ export function CanvasRoom({
               nodes: new LiveMap(),
               edges: new LiveMap(),
             }),
+            aiChat: new LiveList([]),
           })}
         >
           <ClientSideSuspense

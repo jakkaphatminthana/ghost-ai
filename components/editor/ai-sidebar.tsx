@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRealtimeRun } from "@trigger.dev/react-hooks";
 import type { designAgentTask } from "@/trigger/design-agent";
-import { useEventListener } from "@liveblocks/react";
-import { isAiStatusPayload, type AiStatusPayload } from "@/types/tasks";
+import { useEventListener, useMutation, useSelf, useStorage } from "@liveblocks/react";
+import { isAiStatusPayload, parseChatMessage, type AiStatusPayload, type ChatMessage } from "@/types/tasks";
 
 interface Message {
   id: string;
@@ -35,6 +35,7 @@ interface RunSession {
 }
 
 export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps) {
+  // AI Architect tab state
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -42,6 +43,26 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   const [aiStatus, setAiStatus] = useState<AiStatusPayload | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Chat tab state
+  const [chatInput, setChatInput] = useState("");
+  const [chatError, setChatError] = useState<string | null>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Current user info for chat sender name
+  const self = useSelf();
+
+  // Subscribe to ai-chat feed from Liveblocks Storage
+  const rawMessages = useStorage((root) => root.aiChat);
+  const chatMessages: ChatMessage[] = (rawMessages ?? [])
+    .map((m) => parseChatMessage(m))
+    .filter((m): m is ChatMessage => m !== null);
+
+  // Mutation to push a new message into the aiChat LiveList
+  const sendChatMessage = useMutation(({ storage }, message: ChatMessage) => {
+    storage.get("aiChat").push(message);
+  }, []);
 
   useEventListener(({ event }) => {
     if (event.type !== "ai-status") return;
@@ -69,7 +90,6 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
     stopOnCompletion: true,
   });
 
-  // React to run status changes
   useEffect(() => {
     if (!run) return;
 
@@ -101,10 +121,15 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
     setIsGenerating(false);
   }, [run?.status]);
 
-  // Auto-scroll to latest message
+  // Auto-scroll AI Architect messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isGenerating]);
+
+  // Auto-scroll chat messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   async function handleSend() {
     const text = input.trim();
@@ -118,7 +143,6 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
     setIsGenerating(true);
 
     try {
-      // Trigger the design task
       const designRes = await fetch("/api/ai/design", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,7 +155,6 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
 
       const { runId } = (await designRes.json()) as { runId: string };
 
-      // Get a run-scoped public token for realtime tracking
       const tokenRes = await fetch("/api/ai/design/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,6 +190,34 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   function handleChip(prompt: string) {
     setInput(prompt);
     textareaRef.current?.focus();
+  }
+
+  function handleChatSend() {
+    const text = chatInput.trim();
+    if (!text) return;
+
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      sender: self?.info.name ?? "User",
+      role: "user",
+      content: text,
+      timestamp: Date.now(),
+    };
+
+    try {
+      sendChatMessage(message);
+      setChatInput("");
+      setChatError(null);
+    } catch {
+      setChatError("Failed to send message. Please try again.");
+    }
+  }
+
+  function handleChatKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleChatSend();
+    }
   }
 
   return (
@@ -209,6 +260,12 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
               className="flex-1 text-text-muted data-active:bg-accent-ai data-active:text-white"
             >
               AI Architect
+            </TabsTrigger>
+            <TabsTrigger
+              value="chat"
+              className="flex-1 text-text-muted data-active:bg-accent-ai data-active:text-white"
+            >
+              Chat
             </TabsTrigger>
             <TabsTrigger
               value="specs"
@@ -287,6 +344,69 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Chat */}
+        <TabsContent value="chat" className="flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {chatMessages.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 pt-8 px-2 text-center">
+                <p className="text-sm font-medium text-text-primary">Room Chat</p>
+                <p className="text-xs text-text-muted">
+                  Send messages to everyone in this room
+                </p>
+              </div>
+            ) : (
+              <>
+                {chatMessages.map((msg) => (
+                  <div key={msg.id} className="flex flex-col gap-0.5">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-medium text-text-secondary">
+                        {msg.sender}
+                      </span>
+                      <span className="text-xs text-text-faint">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-bg-elevated border border-border-default px-3 py-2 text-sm text-text-primary">
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </>
+            )}
+          </div>
+
+          {chatError && (
+            <div className="shrink-0 px-3 pb-1">
+              <p className="text-xs text-state-error">{chatError}</p>
+            </div>
+          )}
+
+          <div className="shrink-0 border-t border-border-default p-3">
+            <div className="flex items-end gap-2">
+              <Textarea
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder="Message the room…"
+                className="flex-1 min-h-18 max-h-40 resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-ai focus-visible:ring-accent-ai/20"
+              />
+              <Button
+                size="icon"
+                onClick={handleChatSend}
+                disabled={!chatInput.trim()}
+                className="h-9 w-9 shrink-0 bg-accent-ai text-white hover:bg-accent-ai/90 disabled:opacity-40"
+              >
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>
