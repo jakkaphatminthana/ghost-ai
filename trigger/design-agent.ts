@@ -1,6 +1,6 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateObject } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
 import { LiveObject, LiveMap } from "@liveblocks/node";
 import type { LsonObject } from "@liveblocks/node";
 import { z } from "zod";
@@ -41,17 +41,15 @@ const DesignSchema = z.object({
       id: z.string().describe("Unique edge ID, e.g. 'edge-1'"),
       source: z.string().describe("Source node ID"),
       target: z.string().describe("Target node ID"),
-      label: z.string().optional().describe("Short optional label on the edge"),
+      label: z.string().describe("Short label on the edge, or empty string if none"),
     })
   ),
   deleteNodeIds: z
     .array(z.string())
-    .optional()
-    .describe("IDs of existing nodes to remove before adding the new ones"),
+    .describe("IDs of existing nodes to remove before adding new ones. Empty array if none."),
   deleteEdgeIds: z
     .array(z.string())
-    .optional()
-    .describe("IDs of existing edges to remove before adding the new ones"),
+    .describe("IDs of existing edges to remove before adding new ones. Empty array if none."),
 });
 
 const SYSTEM_PROMPT = `You are Ghost AI, an expert system architect that generates visual canvas designs.
@@ -82,8 +80,8 @@ export const designAgentTask = task({
 
   run: async (payload: DesignAgentPayload) => {
     const liveblocks = getLiveblocks();
-    const google = createGoogleGenerativeAI({
-      apiKey: process.env.GOOGLE_AI_API_KEY,
+    const groq = createGroq({
+      apiKey: process.env.GROQ_API_KEY,
     });
 
     // 1. Set AI presence: thinking
@@ -113,13 +111,13 @@ export const designAgentTask = task({
       logger.warn("Could not read current canvas state", { err });
     }
 
-    // 4. Generate design with Gemini
+    // 4. Generate design with Groq
     logger.log("Generating design", { prompt: payload.prompt });
 
     let design: z.infer<typeof DesignSchema>;
     try {
       const result = await generateObject({
-        model: google("gemini-2.0-flash"),
+        model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
         schema: DesignSchema,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -135,7 +133,7 @@ export const designAgentTask = task({
       });
       design = result.object;
     } catch (err) {
-      logger.error("Gemini generation failed", { err });
+      logger.error("Groq generation failed", { err });
 
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
