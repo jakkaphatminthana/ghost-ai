@@ -46,6 +46,7 @@ export async function GET(
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
       "Content-Disposition": `attachment; filename="spec-${specId}.md"`,
+      "Cache-Control": "no-store",
     },
   });
 }

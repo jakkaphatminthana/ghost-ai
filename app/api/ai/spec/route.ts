@@ -3,12 +3,13 @@ import { z } from "zod";
 import { getClerkIdentity, getProjectAccess } from "@/lib/project-access";
 import { prisma } from "@/lib/prisma";
 import type { generateSpecTask } from "@/trigger/generate-spec";
+import { ChatMessageInputSchema, NodeSchema, EdgeSchema } from "@/trigger/generate-spec";
 
 const SpecRequestSchema = z.object({
   roomId: z.string().min(1, "roomId is required"),
-  chatHistory: z.array(z.unknown()),
-  nodes: z.array(z.unknown()),
-  edges: z.array(z.unknown()),
+  chatHistory: z.array(ChatMessageInputSchema).max(100),
+  nodes: z.array(NodeSchema).max(500),
+  edges: z.array(EdgeSchema).max(2_000),
 });
 
 export async function POST(request: Request) {
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   const parsed = SpecRequestSchema.safeParse(rawBody);
   if (!parsed.success) {
     return Response.json(
-      { error: "Invalid request body", details: parsed.error.flatten() },
+      { error: "Invalid request body", details: parsed.error.format() },
       { status: 400 }
     );
   }

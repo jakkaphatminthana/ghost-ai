@@ -16,7 +16,7 @@ export async function GET(
   try {
     const specs = await prisma.projectSpec.findMany({
       where: { projectId },
-      select: { id: true, createdAt: true, filePath: true },
+      select: { id: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     });
     return Response.json({ specs });

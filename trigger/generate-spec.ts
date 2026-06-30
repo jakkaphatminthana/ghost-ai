@@ -3,39 +3,39 @@ import { generateText } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { z } from "zod";
 import { getLiveblocks } from "@/lib/liveblocks";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 
-const NodeSchema = z.object({
+export const NodeSchema = z.object({
   id: z.string(),
   data: z.object({
-    label: z.string(),
+    label: z.string().max(500),
     color: z.string().optional(),
     shape: z.string().optional(),
   }),
   position: z.object({ x: z.number(), y: z.number() }).optional(),
 });
 
-const EdgeSchema = z.object({
+export const EdgeSchema = z.object({
   id: z.string(),
   source: z.string(),
   target: z.string(),
-  data: z.object({ label: z.string().optional() }).optional(),
+  data: z.object({ label: z.string().max(200).optional() }).optional(),
 });
 
-const ChatMessageInputSchema = z.object({
+export const ChatMessageInputSchema = z.object({
   sender: z.string().optional(),
   role: z.enum(["user", "assistant"]),
-  content: z.string(),
+  content: z.string().max(10_000),
   timestamp: z.number().optional(),
 });
 
 const GenerateSpecPayloadSchema = z.object({
   projectId: z.string().min(1),
   roomId: z.string().min(1),
-  chatHistory: z.array(ChatMessageInputSchema),
-  nodes: z.array(NodeSchema),
-  edges: z.array(EdgeSchema),
+  chatHistory: z.array(ChatMessageInputSchema).max(100),
+  nodes: z.array(NodeSchema).max(500),
+  edges: z.array(EdgeSchema).max(2_000),
 });
 
 type GenerateSpecPayload = z.infer<typeof GenerateSpecPayloadSchema>;
@@ -89,6 +89,7 @@ export const generateSpecTask = task({
     // Broadcast start
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
+      task: "spec",
       status: "start",
       text: "Ghost AI is generating the technical specification…",
     });
@@ -120,6 +121,7 @@ export const generateSpecTask = task({
       logger.error("Groq generation failed", { err });
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
+        task: "spec",
         status: "error",
         text: "Failed to generate specification. Please try again.",
       });
@@ -127,12 +129,14 @@ export const generateSpecTask = task({
     }
 
     let specId: string;
+    let uploadedBlobUrl: string | undefined;
     try {
       const blob = await put(
         `specs/${payload.projectId}/${Date.now()}.md`,
         spec,
         { access: "private", contentType: "text/markdown", addRandomSuffix: true }
       );
+      uploadedBlobUrl = blob.url;
       const record = await prisma.projectSpec.create({
         data: { projectId: payload.projectId, filePath: blob.url },
         select: { id: true },
@@ -140,8 +144,14 @@ export const generateSpecTask = task({
       specId = record.id;
     } catch (err) {
       logger.error("Failed to persist spec", { err });
+      if (uploadedBlobUrl) {
+        await del(uploadedBlobUrl).catch((deleteErr) => {
+          logger.error("Failed to delete orphaned spec blob", { deleteErr });
+        });
+      }
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
+        task: "spec",
         status: "error",
         text: "Spec generated but could not be saved. Please try again.",
       });
@@ -150,6 +160,7 @@ export const generateSpecTask = task({
 
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
+      task: "spec",
       status: "complete",
       text: "Technical specification generated.",
     });
@@ -160,7 +171,7 @@ export const generateSpecTask = task({
       specId,
     });
 
-    return { spec, specId };
+    return { specId };
   },
 });
 

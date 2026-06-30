@@ -100,6 +100,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   useEventListener(({ event }) => {
     if (event.type !== "ai-status") return;
     if (!isAiStatusPayload(event)) return;
+    if (event.task !== "design") return;
 
     setAiStatus(event);
 
@@ -181,6 +182,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   async function handleGenerateSpec() {
     if (isGeneratingSpec) return;
     setIsGeneratingSpec(true);
+    setSpecsError(null);
 
     const nodes = canvasFlow?.nodes ? Object.values(canvasFlow.nodes) : [];
     const edges = canvasFlow?.edges ? Object.values(canvasFlow.edges) : [];
@@ -200,6 +202,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
       ({ runId } = (await res.json()) as { runId: string });
     } catch {
       setIsGeneratingSpec(false);
+      setSpecsError("Failed to start spec generation. Please try again.");
       return;
     }
 
@@ -209,12 +212,14 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ runId }),
       });
-      if (tokenRes.ok) {
-        const { token } = (await tokenRes.json()) as { token: string };
-        setSpecRunSession({ runId, token });
-      }
+      if (!tokenRes.ok) throw new Error("token failed");
+      const { token } = (await tokenRes.json()) as { token: string };
+      setSpecRunSession({ runId, token });
     } catch {
-      // Task is running; no realtime tracking but spec will still be saved.
+      setIsGeneratingSpec(false);
+      setSpecsError(
+        "Spec generation started, but realtime tracking failed. Refresh specs in a moment."
+      );
     }
   }
 
@@ -673,7 +678,12 @@ function SpecItem({ spec, onPreview, onDownload }: SpecItemProps) {
       tabIndex={0}
       className="group rounded-xl border border-border-default bg-bg-elevated p-3 cursor-pointer hover:border-border-subtle transition-colors"
       onClick={() => onPreview(spec.id)}
-      onKeyDown={(e) => e.key === "Enter" && onPreview(spec.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPreview(spec.id);
+        }
+      }}
     >
       <div className="flex items-start gap-2.5">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-bg-subtle mt-0.5">
@@ -694,7 +704,7 @@ function SpecItem({ spec, onPreview, onDownload }: SpecItemProps) {
             e.stopPropagation();
             onDownload(spec.id);
           }}
-          className="h-6 gap-1 px-2 text-xs text-text-faint hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-6 gap-1 px-2 text-xs text-text-faint hover:text-text-primary opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
         >
           <Download className="h-3 w-3" />
           Download

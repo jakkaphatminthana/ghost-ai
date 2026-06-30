@@ -9,7 +9,11 @@ export const AI_STATUS_VALUES = [
 
 export type AiStatusValue = (typeof AI_STATUS_VALUES)[number];
 
+export const AI_STATUS_TASKS = ["design", "spec"] as const;
+export type AiStatusTask = (typeof AI_STATUS_TASKS)[number];
+
 export interface AiStatusPayload {
+  task: AiStatusTask;
   status: AiStatusValue;
   text?: string;
 }
@@ -17,6 +21,7 @@ export interface AiStatusPayload {
 export function isAiStatusPayload(value: unknown): value is AiStatusPayload {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
+  if (!AI_STATUS_TASKS.includes(v.task as AiStatusTask)) return false;
   if (!AI_STATUS_VALUES.includes(v.status as AiStatusValue)) return false;
   if (v.text !== undefined && typeof v.text !== "string") return false;
   return true;
