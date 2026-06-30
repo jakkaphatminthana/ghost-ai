@@ -1,16 +1,14 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { startTransition, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Bot, Download, FileText, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+import { useRealtimeRun } from "@trigger.dev/react-hooks";
+import type { designAgentTask } from "@/trigger/design-agent";
+import { useEventListener, useMutation, useSelf, useStorage } from "@liveblocks/react";
+import { isAiStatusPayload, parseChatMessage, type AiStatusPayload, type ChatMessage } from "@/types/tasks";
 
 const STARTER_PROMPTS = [
   "Design an e-commerce backend",
@@ -21,21 +19,151 @@ const STARTER_PROMPTS = [
 interface AISidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  projectId: string;
+  roomId: string;
 }
 
-export function AISidebar({ isOpen, onClose }: AISidebarProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+interface RunSession {
+  runId: string;
+  token: string;
+}
 
-  function handleSend() {
+export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps) {
+  const [input, setInput] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [runSession, setRunSession] = useState<RunSession | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiStatusPayload | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Chat tab state
+  const [chatInput, setChatInput] = useState("");
+  const [chatError, setChatError] = useState<string | null>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const self = useSelf();
+
+  // Shared ai-chat feed from Liveblocks Storage, split by channel
+  const rawMessages = useStorage((root) => root.aiChat);
+  const allMessages: ChatMessage[] = (rawMessages ?? [])
+    .map((m) => parseChatMessage(m))
+    .filter((m): m is ChatMessage => m !== null);
+  const architectMessages = allMessages.filter((m) => m.channel === "architect");
+  const chatMessages = allMessages.filter((m) => m.channel === "chat");
+
+  const pushToAiChat = useMutation(({ storage }, message: ChatMessage) => {
+    storage.get("aiChat").push(message);
+  }, []);
+
+  useEventListener(({ event }) => {
+    if (event.type !== "ai-status") return;
+    if (!isAiStatusPayload(event)) return;
+
+    setAiStatus(event);
+
+    if (event.status === "start" || event.status === "processing") {
+      setIsGenerating(true);
+    }
+
+    if (event.status === "complete" || event.status === "error") {
+      setIsGenerating(false);
+      setAiStatus(null);
+    }
+  });
+
+  const { run } = useRealtimeRun<typeof designAgentTask>(runSession?.runId, {
+    accessToken: runSession?.token,
+    enabled: !!runSession,
+    stopOnCompletion: true,
+  });
+
+  const runStatus = run?.status;
+  useEffect(() => {
+    if (!runStatus) return;
+
+    const terminal = ["COMPLETED", "FAILED", "CRASHED", "CANCELED", "TIMED_OUT", "SYSTEM_FAILURE", "EXPIRED"];
+    if (!terminal.includes(runStatus)) return;
+
+    startTransition(() => {
+      setRunSession(null);
+      setIsGenerating(false);
+    });
+  }, [runStatus]);
+
+  // Auto-scroll AI Architect messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [architectMessages, isGenerating]);
+
+  // Auto-scroll chat messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  async function handleSend() {
     const text = input.trim();
-    if (!text) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "user", content: text },
-    ]);
+    if (!text || isGenerating) return;
+
     setInput("");
+    setIsGenerating(true);
+
+    pushToAiChat({
+      id: crypto.randomUUID(),
+      sender: self?.info.name ?? "You",
+      role: "user",
+      content: text,
+      timestamp: Date.now(),
+      channel: "architect",
+    });
+
+    // Phase 1: start the task. Failure here means no run was created.
+    let runId: string;
+    try {
+      const designRes = await fetch("/api/ai/design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text, roomId, projectId }),
+      });
+
+      if (!designRes.ok) {
+        throw new Error("Failed to start design generation");
+      }
+
+      ({ runId } = (await designRes.json()) as { runId: string });
+    } catch {
+      pushToAiChat({
+        id: crypto.randomUUID(),
+        sender: "Ghost AI",
+        role: "assistant",
+        content: "Failed to start the design agent. Please try again.",
+        timestamp: Date.now(),
+        channel: "architect",
+      });
+      setIsGenerating(false);
+      return;
+    }
+
+    // Phase 2: get the realtime token for live progress (best-effort).
+    // The task is already running; if this fails, useEventListener will still
+    // receive the task's ai-status broadcasts and clear isGenerating when done.
+    try {
+      const tokenRes = await fetch("/api/ai/design/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+
+      if (!tokenRes.ok) {
+        throw new Error("Failed to get run token");
+      }
+
+      const { token } = (await tokenRes.json()) as { token: string };
+      setRunSession({ runId, token });
+    } catch {
+      // No realtime subscription, but the task will complete and write to
+      // shared storage. The ai-status broadcast events will clear isGenerating.
+    }
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -49,6 +177,37 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
     setInput(prompt);
     textareaRef.current?.focus();
   }
+
+  function handleChatSend() {
+    const text = chatInput.trim();
+    if (!text) return;
+
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      sender: self?.info.name ?? "User",
+      role: "user",
+      content: text,
+      timestamp: Date.now(),
+      channel: "chat",
+    };
+
+    try {
+      pushToAiChat(message);
+      setChatInput("");
+      setChatError(null);
+    } catch {
+      setChatError("Failed to send message. Please try again.");
+    }
+  }
+
+  function handleChatKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleChatSend();
+    }
+  }
+
+  const isRunActive = !!runSession || isGenerating;
 
   return (
     <aside
@@ -92,6 +251,12 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
               AI Architect
             </TabsTrigger>
             <TabsTrigger
+              value="chat"
+              className="flex-1 text-text-muted data-active:bg-accent-ai data-active:text-white"
+            >
+              Chat
+            </TabsTrigger>
+            <TabsTrigger
               value="specs"
               className="flex-1 text-text-muted data-active:bg-accent-ai data-active:text-white"
             >
@@ -103,30 +268,51 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
         {/* AI Architect */}
         <TabsContent value="architect" className="flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 ? (
+            {architectMessages.length === 0 && !isGenerating ? (
               <EmptyState onChipClick={handleChip} />
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
-                >
+              <>
+                {architectMessages.map((msg) => (
                   <div
-                    className={[
-                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
-                      msg.role === "user"
-                        ? "bg-accent-primary-dim border-2 border-accent-primary/50 text-text-primary"
-                        : "bg-bg-elevated border border-border-default text-accent-ai-text",
-                    ].join(" ")}
+                    key={msg.id}
+                    className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
                   >
-                    {msg.content}
+                    <div
+                      className={[
+                        "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
+                        msg.role === "user"
+                          ? "bg-accent-green text-white"
+                          : "bg-bg-elevated border border-border-default text-text-secondary",
+                      ].join(" ")}
+                    >
+                      {msg.content}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {isGenerating && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-1.5 rounded-2xl bg-bg-elevated border border-border-default px-3 py-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-ai animate-bounce" />
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
             )}
           </div>
 
-          <div className="shrink-0 border-t border-border-default p-3">
+          <div className="shrink-0 border-t border-border-default p-3 space-y-2">
+            {/* Status strip — only while run is active */}
+            {isRunActive && (
+              <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-elevated px-3 py-1.5">
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent-green" />
+                <span className="truncate text-xs text-text-muted">
+                  {aiStatus?.text ?? "AI is working…"}
+                </span>
+              </div>
+            )}
             <div className="flex items-end gap-2">
               <Textarea
                 ref={textareaRef}
@@ -134,12 +320,85 @@ export function AISidebar({ isOpen, onClose }: AISidebarProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask Ghost AI…"
-                className="flex-1 min-h-[72px] max-h-[160px] resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-ai focus-visible:ring-accent-ai/20"
+                disabled={isGenerating}
+                className="flex-1 min-h-18 max-h-40 resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-green focus-visible:ring-accent-green/20 disabled:opacity-50"
               />
               <Button
                 size="icon"
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || isGenerating}
+                className="h-9 w-9 shrink-0 bg-accent-green text-white hover:bg-accent-green/90 disabled:opacity-40"
+              >
+                {isGenerating ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Chat */}
+        <TabsContent value="chat" className="flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {chatMessages.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 pt-8 px-2 text-center">
+                <p className="text-sm font-medium text-text-primary">Room Chat</p>
+                <p className="text-xs text-text-muted">
+                  Send messages to everyone in this room
+                </p>
+              </div>
+            ) : (
+              <>
+                {chatMessages.map((msg) => (
+                  <div key={msg.id} className="flex flex-col gap-0.5">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-medium text-text-secondary">
+                        {msg.sender}
+                      </span>
+                      <span className="text-xs text-text-faint">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className={[
+                      "rounded-xl px-3 py-2 text-sm",
+                      msg.role === "assistant"
+                        ? "bg-bg-elevated border border-border-default text-accent-ai-text"
+                        : "bg-bg-elevated border border-border-default text-text-primary",
+                    ].join(" ")}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </>
+            )}
+          </div>
+
+          {chatError && (
+            <div className="shrink-0 px-3 pb-1">
+              <p className="text-xs text-state-error">{chatError}</p>
+            </div>
+          )}
+
+          <div className="shrink-0 border-t border-border-default p-3">
+            <div className="flex items-end gap-2">
+              <Textarea
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder="Message the room…"
+                className="flex-1 min-h-18 max-h-40 resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-ai focus-visible:ring-accent-ai/20"
+              />
+              <Button
+                size="icon"
+                onClick={handleChatSend}
+                disabled={!chatInput.trim()}
                 className="h-9 w-9 shrink-0 bg-accent-ai text-white hover:bg-accent-ai/90 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />

@@ -1,13 +1,14 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
-import { LiveMap, LiveObject } from "@liveblocks/client";
+import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import {
   LiveblocksProvider,
   RoomProvider,
   ClientSideSuspense,
 } from "@liveblocks/react";
 import { CanvasFlow } from "@/components/editor/canvas-flow";
+import { AISidebar } from "@/components/editor/ai-sidebar";
 
 class CanvasErrorBoundary extends Component<
   { children: ReactNode },
@@ -36,9 +37,18 @@ interface CanvasRoomProps {
   projectId: string;
   isTemplatesOpen: boolean;
   onTemplatesClose: () => void;
+  isAiSidebarOpen: boolean;
+  onAiSidebarClose: () => void;
 }
 
-export function CanvasRoom({ roomId, projectId, isTemplatesOpen, onTemplatesClose }: CanvasRoomProps) {
+export function CanvasRoom({
+  roomId,
+  projectId,
+  isTemplatesOpen,
+  onTemplatesClose,
+  isAiSidebarOpen,
+  onAiSidebarClose,
+}: CanvasRoomProps) {
   return (
     <CanvasErrorBoundary>
       <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
@@ -50,6 +60,7 @@ export function CanvasRoom({ roomId, projectId, isTemplatesOpen, onTemplatesClos
               nodes: new LiveMap(),
               edges: new LiveMap(),
             }),
+            aiChat: new LiveList([]),
           })}
         >
           <ClientSideSuspense
@@ -65,6 +76,13 @@ export function CanvasRoom({ roomId, projectId, isTemplatesOpen, onTemplatesClos
               onTemplatesClose={onTemplatesClose}
             />
           </ClientSideSuspense>
+
+          <AISidebar
+            isOpen={isAiSidebarOpen}
+            onClose={onAiSidebarClose}
+            projectId={projectId}
+            roomId={roomId}
+          />
         </RoomProvider>
       </LiveblocksProvider>
     </CanvasErrorBoundary>

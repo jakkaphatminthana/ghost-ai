@@ -22,7 +22,6 @@ export function getUserColor(userId: string): string {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var _liveblocks: Liveblocks | undefined;
 }
 
