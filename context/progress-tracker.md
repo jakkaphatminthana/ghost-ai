@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 26: AI Chat Functional
+Feature 29: Spec UI Integration
 
 ## Current Goal
 
-Wire up the AI Architect tab so users can submit design prompts, track AI run status in real time via useRealtimeRun, push user/AI messages to the aiChat LiveList, and display proper chat bubble styles and status strip.
+Integrate spec generation results into the editor: fetch and display the spec list in the Specs tab, open a preview modal with rendered Markdown, and provide per-spec download actions. Wire the Generate Spec button to the existing /api/ai/spec backend.
 
 ## Completed
 
@@ -38,6 +38,9 @@ Wire up the AI Architect tab so users can submit design prompts, track AI run st
 - 24-ai-presence-state: `types/tasks.ts` defines `AiStatusPayload` and `isAiStatusPayload` type guard. `AISidebar` moved inside `RoomProvider` in `canvas-room.tsx` (removed from `workspace-shell.tsx`) so it can call `useEventListener`. `ai-sidebar.tsx` subscribes to `ai-status` room events via `useEventListener` — drives `isGenerating` for all room participants, shows a status strip with the latest message text, and renders a spinner on the send button during generation. `live-cursors.tsx` reads `thinking` from presence and shows a CSS spin indicator in the cursor name badge. `npm run build` passes.
 - 25-sidebar-chat-feed: `ChatMessageSchema` (Zod) and `parseChatMessage` added to `types/tasks.ts`. `liveblocks.config.ts` extends Storage with `aiChat: LiveList<ChatMessage>`. `canvas-room.tsx` initialises `aiChat: new LiveList([])`. `ai-sidebar.tsx` gains a "Chat" tab — subscribes via `useStorage`, validates messages via `parseChatMessage` before rendering, shows sender + timestamp + content, sends via `useMutation`, clears input on success, shows error state on failure. Separate from `ai-status-feed` (broadcast events). `npm run build` passes.
 - 26-ai-chat-functional: AI Architect tab now reads/writes the shared `aiChat` LiveList instead of local state. `ChatMessageSchema.role` updated to `"user" | "assistant"`. `--accent-green: #62c073` token added. On submit: pushes user message to `aiChat`, calls `/api/ai/design` + `/api/ai/design/token`, sets run session. On run completion/failure: pushes AI assistant message to `aiChat`. Status strip (green accent, pulse dot) positioned above the input and visible only while a run is active. User bubbles: `bg-accent-green text-white`; AI bubbles: dark bg. Submit button green when enabled, spinner while running. `npm run build` passes.
+- 27-spec-generation-flow: `POST /api/ai/spec` accepts `roomId`/`chatHistory`/`nodes`/`edges`, resolves `projectId` from `roomId` via `getProjectAccess`, triggers `generate-spec` task, saves `TaskRun` record, returns `runId`. `POST /api/ai/spec/token` verifies `TaskRun` ownership then issues a run-scoped Trigger.dev public token (1h). `trigger/generate-spec.ts` validates payload with Zod, uses Groq `generateText` to produce a Markdown spec from canvas + chat context, broadcasts `ai-status` events for realtime tracking, returns `{ spec }`. TypeScript and build pass.
+- 28-spec-persistence-download: `ProjectSpec` Prisma model (`id`, `projectId`, `filePath`, `createdAt`) in `prisma/models/project-spec.prisma`, migration applied. `generate-spec` task extended to upload Markdown to Vercel Blob (`specs/{projectId}/…md`) and create a `ProjectSpec` record, returning `{ spec, specId }`. `GET /api/projects/[projectId]/specs/[specId]/download` authenticates user, verifies project access, verifies spec ownership, streams blob as `text/markdown` attachment. TypeScript and build pass.
+- 29-spec-ui-integration: `GET /api/projects/[projectId]/specs` lists specs (id, createdAt, filePath) ordered newest-first. `react-markdown` installed. Specs tab in `ai-sidebar.tsx` fully wired: fetches and displays spec list on mount, Generate Spec button triggers `/api/ai/spec` + `/api/ai/spec/token` with canvas nodes/edges and architect chat history, tracks run via `useRealtimeRun<generateSpecTask>` and refreshes list on completion. Clicking a spec opens a preview Dialog that fetches content via the download endpoint and renders as Markdown. Download action on each list item and in the modal triggers a browser file download. TypeScript and build pass.
 
 ## In Progress
 
@@ -45,7 +48,7 @@ Wire up the AI Architect tab so users can submit design prompts, track AI run st
 
 ## Next Up
 
-- TBD
+- (TBD)
 
 ## Open Questions
 
