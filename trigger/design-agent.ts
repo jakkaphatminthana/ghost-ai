@@ -100,6 +100,7 @@ export const designAgentTask = task({
     // 2. Broadcast start
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
+      task: "design",
       status: "start",
       text: "Ghost AI is designing your architecture…",
     });
@@ -142,6 +143,7 @@ export const designAgentTask = task({
 
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
+        task: "design",
         status: "error",
         text: "Failed to generate design. Please try again.",
       });
@@ -180,6 +182,7 @@ export const designAgentTask = task({
     // 6. Broadcast: applying to canvas
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
+      task: "design",
       status: "processing",
       text: "Applying design to canvas…",
     });
@@ -282,6 +285,7 @@ export const designAgentTask = task({
 
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
+        task: "design",
         status: "error",
         text: "Design was generated but failed to apply to canvas.",
       });
@@ -311,6 +315,7 @@ export const designAgentTask = task({
     // 8. Broadcast complete
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
+      task: "design",
       status: "complete",
       text: design.summary,
     });
