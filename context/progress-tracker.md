@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-Feature 25: Sidebar Chat Feed
+Feature 26: AI Chat Functional
 
 ## Current Goal
 
-Add real-time collaborative room chat to the AI sidebar using a Liveblocks LiveList as the `ai-chat` feed, separate from the existing `ai-status-feed` broadcast events.
+Wire up the AI Architect tab so users can submit design prompts, track AI run status in real time via useRealtimeRun, push user/AI messages to the aiChat LiveList, and display proper chat bubble styles and status strip.
 
 ## Completed
 
@@ -37,6 +37,7 @@ Add real-time collaborative room chat to the AI sidebar using a Liveblocks LiveL
 - 23-design-agent-logic: `trigger/design-agent.ts` uses Groq (`meta-llama/llama-4-scout-17b-16e-instruct` via `@ai-sdk/groq`) with a structured Zod schema to generate nodes and edges, applies them via `liveblocks.mutateStorage`, sets AI presence (`thinking: true`) via `liveblocks.setPresence`, and broadcasts status events via `liveblocks.broadcastEvent`. `AISidebar` wired to `POST /api/ai/design` + `POST /api/ai/design/token` with `useRealtimeRun` for live status. `RoomEvent` type added to `liveblocks.config.ts`. `npm run build` passes.
 - 24-ai-presence-state: `types/tasks.ts` defines `AiStatusPayload` and `isAiStatusPayload` type guard. `AISidebar` moved inside `RoomProvider` in `canvas-room.tsx` (removed from `workspace-shell.tsx`) so it can call `useEventListener`. `ai-sidebar.tsx` subscribes to `ai-status` room events via `useEventListener` — drives `isGenerating` for all room participants, shows a status strip with the latest message text, and renders a spinner on the send button during generation. `live-cursors.tsx` reads `thinking` from presence and shows a CSS spin indicator in the cursor name badge. `npm run build` passes.
 - 25-sidebar-chat-feed: `ChatMessageSchema` (Zod) and `parseChatMessage` added to `types/tasks.ts`. `liveblocks.config.ts` extends Storage with `aiChat: LiveList<ChatMessage>`. `canvas-room.tsx` initialises `aiChat: new LiveList([])`. `ai-sidebar.tsx` gains a "Chat" tab — subscribes via `useStorage`, validates messages via `parseChatMessage` before rendering, shows sender + timestamp + content, sends via `useMutation`, clears input on success, shows error state on failure. Separate from `ai-status-feed` (broadcast events). `npm run build` passes.
+- 26-ai-chat-functional: AI Architect tab now reads/writes the shared `aiChat` LiveList instead of local state. `ChatMessageSchema.role` updated to `"user" | "assistant"`. `--accent-green: #62c073` token added. On submit: pushes user message to `aiChat`, calls `/api/ai/design` + `/api/ai/design/token`, sets run session. On run completion/failure: pushes AI assistant message to `aiChat`. Status strip (green accent, pulse dot) positioned above the input and visible only while a run is active. User bubbles: `bg-accent-green text-white`; AI bubbles: dark bg. Submit button green when enabled, spinner while running. `npm run build` passes.
 
 ## In Progress
 

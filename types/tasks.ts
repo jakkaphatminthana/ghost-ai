@@ -25,7 +25,7 @@ export function isAiStatusPayload(value: unknown): value is AiStatusPayload {
 export const ChatMessageSchema = z.object({
   id: z.string(),
   sender: z.string(),
-  role: z.literal("user"),
+  role: z.union([z.literal("user"), z.literal("assistant")]),
   content: z.string().min(1),
   timestamp: z.number(),
 });

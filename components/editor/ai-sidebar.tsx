@@ -10,12 +10,6 @@ import type { designAgentTask } from "@/trigger/design-agent";
 import { useEventListener, useMutation, useSelf, useStorage } from "@liveblocks/react";
 import { isAiStatusPayload, parseChatMessage, type AiStatusPayload, type ChatMessage } from "@/types/tasks";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
-
 const STARTER_PROMPTS = [
   "Design an e-commerce backend",
   "Create a chat app architecture",
@@ -35,8 +29,6 @@ interface RunSession {
 }
 
 export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps) {
-  // AI Architect tab state
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [runSession, setRunSession] = useState<RunSession | null>(null);
@@ -50,17 +42,15 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Current user info for chat sender name
   const self = useSelf();
 
-  // Subscribe to ai-chat feed from Liveblocks Storage
+  // Shared ai-chat feed from Liveblocks Storage
   const rawMessages = useStorage((root) => root.aiChat);
-  const chatMessages: ChatMessage[] = (rawMessages ?? [])
+  const aiChatMessages: ChatMessage[] = (rawMessages ?? [])
     .map((m) => parseChatMessage(m))
     .filter((m): m is ChatMessage => m !== null);
 
-  // Mutation to push a new message into the aiChat LiveList
-  const sendChatMessage = useMutation(({ storage }, message: ChatMessage) => {
+  const pushToAiChat = useMutation(({ storage }, message: ChatMessage) => {
     storage.get("aiChat").push(message);
   }, []);
 
@@ -98,23 +88,21 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
 
     if (run.status === "COMPLETED") {
       const output = run.output as { summary: string } | undefined;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: output?.summary ?? "Design complete! Check the canvas.",
-        },
-      ]);
+      pushToAiChat({
+        id: crypto.randomUUID(),
+        sender: "Ghost AI",
+        role: "assistant",
+        content: output?.summary ?? "Design complete! Check the canvas.",
+        timestamp: Date.now(),
+      });
     } else {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "Something went wrong generating the design. Please try again.",
-        },
-      ]);
+      pushToAiChat({
+        id: crypto.randomUUID(),
+        sender: "Ghost AI",
+        role: "assistant",
+        content: "Something went wrong generating the design. Please try again.",
+        timestamp: Date.now(),
+      });
     }
 
     setRunSession(null);
@@ -124,23 +112,27 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
   // Auto-scroll AI Architect messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isGenerating]);
+  }, [aiChatMessages, isGenerating]);
 
   // Auto-scroll chat messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+  }, [aiChatMessages]);
 
   async function handleSend() {
     const text = input.trim();
     if (!text || isGenerating) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "user", content: text },
-    ]);
     setInput("");
     setIsGenerating(true);
+
+    pushToAiChat({
+      id: crypto.randomUUID(),
+      sender: self?.info.name ?? "You",
+      role: "user",
+      content: text,
+      timestamp: Date.now(),
+    });
 
     try {
       const designRes = await fetch("/api/ai/design", {
@@ -168,14 +160,13 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
       const { token } = (await tokenRes.json()) as { token: string };
       setRunSession({ runId, token });
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "Failed to start the design agent. Please try again.",
-        },
-      ]);
+      pushToAiChat({
+        id: crypto.randomUUID(),
+        sender: "Ghost AI",
+        role: "assistant",
+        content: "Failed to start the design agent. Please try again.",
+        timestamp: Date.now(),
+      });
       setIsGenerating(false);
     }
   }
@@ -205,7 +196,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
     };
 
     try {
-      sendChatMessage(message);
+      pushToAiChat(message);
       setChatInput("");
       setChatError(null);
     } catch {
@@ -219,6 +210,8 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
       handleChatSend();
     }
   }
+
+  const isRunActive = !!runSession || isGenerating;
 
   return (
     <aside
@@ -278,20 +271,12 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
 
         {/* AI Architect */}
         <TabsContent value="architect" className="flex flex-col overflow-hidden">
-          {isGenerating && (
-            <div className="shrink-0 flex items-center gap-2 border-b border-border-subtle bg-accent-ai/10 px-4 py-2">
-              <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent-ai" />
-              <span className="truncate text-xs text-accent-ai-text">
-                {aiStatus?.text ?? "AI is working…"}
-              </span>
-            </div>
-          )}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && !isGenerating ? (
+            {aiChatMessages.length === 0 && !isGenerating ? (
               <EmptyState onChipClick={handleChip} />
             ) : (
               <>
-                {messages.map((msg) => (
+                {aiChatMessages.map((msg) => (
                   <div
                     key={msg.id}
                     className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
@@ -300,8 +285,8 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
                       className={[
                         "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
                         msg.role === "user"
-                          ? "bg-accent-primary-dim border-2 border-accent-primary/50 text-text-primary"
-                          : "bg-bg-elevated border border-border-default text-accent-ai-text",
+                          ? "bg-accent-green text-white"
+                          : "bg-bg-elevated border border-border-default text-text-secondary",
                       ].join(" ")}
                     >
                       {msg.content}
@@ -322,7 +307,16 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
             )}
           </div>
 
-          <div className="shrink-0 border-t border-border-default p-3">
+          <div className="shrink-0 border-t border-border-default p-3 space-y-2">
+            {/* Status strip — only while run is active */}
+            {isRunActive && (
+              <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-elevated px-3 py-1.5">
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent-green" />
+                <span className="truncate text-xs text-text-muted">
+                  {aiStatus?.text ?? "AI is working…"}
+                </span>
+              </div>
+            )}
             <div className="flex items-end gap-2">
               <Textarea
                 ref={textareaRef}
@@ -331,13 +325,13 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
                 onKeyDown={handleKeyDown}
                 placeholder="Ask Ghost AI…"
                 disabled={isGenerating}
-                className="flex-1 min-h-18 max-h-40 resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-ai focus-visible:ring-accent-ai/20 disabled:opacity-50"
+                className="flex-1 min-h-18 max-h-40 resize-none overflow-y-auto bg-bg-elevated border-border-default text-text-primary placeholder:text-text-faint focus-visible:border-accent-green focus-visible:ring-accent-green/20 disabled:opacity-50"
               />
               <Button
                 size="icon"
                 onClick={handleSend}
                 disabled={!input.trim() || isGenerating}
-                className="h-9 w-9 shrink-0 bg-accent-ai text-white hover:bg-accent-ai/90 disabled:opacity-40"
+                className="h-9 w-9 shrink-0 bg-accent-green text-white hover:bg-accent-green/90 disabled:opacity-40"
               >
                 {isGenerating ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -352,7 +346,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
         {/* Chat */}
         <TabsContent value="chat" className="flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {chatMessages.length === 0 ? (
+            {aiChatMessages.length === 0 ? (
               <div className="flex flex-col items-center gap-3 pt-8 px-2 text-center">
                 <p className="text-sm font-medium text-text-primary">Room Chat</p>
                 <p className="text-xs text-text-muted">
@@ -361,7 +355,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
               </div>
             ) : (
               <>
-                {chatMessages.map((msg) => (
+                {aiChatMessages.map((msg) => (
                   <div key={msg.id} className="flex flex-col gap-0.5">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-medium text-text-secondary">
@@ -374,7 +368,12 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
                         })}
                       </span>
                     </div>
-                    <div className="rounded-xl bg-bg-elevated border border-border-default px-3 py-2 text-sm text-text-primary">
+                    <div className={[
+                      "rounded-xl px-3 py-2 text-sm",
+                      msg.role === "assistant"
+                        ? "bg-bg-elevated border border-border-default text-accent-ai-text"
+                        : "bg-bg-elevated border border-border-default text-text-primary",
+                    ].join(" ")}>
                       {msg.content}
                     </div>
                   </div>
