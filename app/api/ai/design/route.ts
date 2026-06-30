@@ -1,11 +1,10 @@
-import { tasks } from "@trigger.dev/sdk/v3";
+import { tasks, runs } from "@trigger.dev/sdk/v3";
 import { getClerkIdentity, getProjectAccess } from "@/lib/project-access";
 import { prisma } from "@/lib/prisma";
 import type { designAgentTask } from "@/trigger/design-agent";
 
 interface DesignBody {
   prompt: string;
-  roomId: string;
   projectId: string;
 }
 
@@ -20,12 +19,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Malformed JSON" }, { status: 400 });
   }
 
-  const { prompt, roomId, projectId } = body;
+  const { prompt, projectId } = body;
   if (typeof prompt !== "string" || !prompt.trim()) {
     return Response.json({ error: "prompt is required" }, { status: 400 });
-  }
-  if (typeof roomId !== "string" || !roomId.trim()) {
-    return Response.json({ error: "roomId is required" }, { status: 400 });
   }
   if (typeof projectId !== "string" || !projectId.trim()) {
     return Response.json({ error: "projectId is required" }, { status: 400 });
@@ -38,7 +34,7 @@ export async function POST(request: Request) {
   try {
     const handle = await tasks.trigger<typeof designAgentTask>("design-agent", {
       prompt: prompt.trim(),
-      roomId: roomId.trim(),
+      roomId: access.id,
     });
     runId = handle.id;
   } catch (err) {
@@ -52,6 +48,10 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error(err);
+    // Compensate: cancel the queued run so it doesn't run without a DB record.
+    await runs.cancel(runId).catch((cancelErr) => {
+      console.error("Failed to cancel orphaned run after DB write failure", runId, cancelErr);
+    });
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 

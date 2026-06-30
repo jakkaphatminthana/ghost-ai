@@ -1,12 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateObject } from "ai";
 import { createGroq } from "@ai-sdk/groq";
-import { LiveObject, LiveMap } from "@liveblocks/node";
+import { LiveObject, LiveList, LiveMap } from "@liveblocks/node";
 import type { LsonObject } from "@liveblocks/node";
 import { z } from "zod";
 import { getLiveblocks } from "@/lib/liveblocks";
 import { NODE_COLORS, NODE_SHAPES } from "@/types/canvas";
 import type { NodeShape } from "@/types/canvas";
+import type { ChatMessage } from "@/types/tasks";
 
 const AI_USER_ID = "ai-agent";
 const AI_USER_INFO = { name: "Ghost AI", avatar: "", color: "#6457f9" };
@@ -77,6 +79,9 @@ interface DesignAgentPayload {
 export const designAgentTask = task({
   id: "design-agent",
   maxDuration: 300,
+  // Storage mutations and room events are not idempotent — retries would
+  // duplicate nodes, edges, and chat messages on the canvas.
+  retry: { maxAttempts: 1 },
 
   run: async (payload: DesignAgentPayload) => {
     const liveblocks = getLiveblocks();
@@ -96,7 +101,7 @@ export const designAgentTask = task({
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
       status: "start",
-      message: "Ghost AI is designing your architecture…",
+      text: "Ghost AI is designing your architecture…",
     });
 
     // 3. Read current canvas state
@@ -138,8 +143,22 @@ export const designAgentTask = task({
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
         status: "error",
-        message: "Failed to generate design. Please try again.",
+        text: "Failed to generate design. Please try again.",
       });
+      try {
+        await liveblocks.mutateStorage(payload.roomId, ({ root }) => {
+          (root.get("aiChat") as LiveList<ChatMessage>).push({
+            id: randomUUID(),
+            sender: "Ghost AI",
+            role: "assistant",
+            content: "Something went wrong generating the design. Please try again.",
+            timestamp: Date.now(),
+            channel: "architect",
+          });
+        });
+      } catch (chatErr) {
+        logger.warn("Could not persist error message to aiChat", { chatErr });
+      }
       await liveblocks.setPresence(payload.roomId, {
         userId: AI_USER_ID,
         data: { cursor: null, thinking: false },
@@ -162,7 +181,7 @@ export const designAgentTask = task({
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
       status: "processing",
-      message: "Applying design to canvas…",
+      text: "Applying design to canvas…",
     });
 
     // 7. Mutate Liveblocks storage
@@ -186,9 +205,29 @@ export const designAgentTask = task({
         const nodes = flow.get("nodes");
         const edges = flow.get("edges");
 
-        // Delete requested nodes/edges
-        for (const id of design.deleteNodeIds ?? []) nodes.delete(id);
-        for (const id of design.deleteEdgeIds ?? []) edges.delete(id);
+        // Build the final node id set: existing + incoming - deleted
+        const deletedNodeIds = new Set(design.deleteNodeIds ?? []);
+        const finalNodeIds = new Set<string>();
+        for (const id of nodes.keys()) {
+          if (!deletedNodeIds.has(id)) finalNodeIds.add(id);
+        }
+        for (const node of validatedNodes) finalNodeIds.add(node.id);
+
+        // Delete requested nodes
+        for (const id of deletedNodeIds) nodes.delete(id);
+
+        // Cascade-delete edges whose endpoints were removed, plus any explicitly requested
+        const explicitEdgeDeletes = new Set(design.deleteEdgeIds ?? []);
+        for (const [id, edge] of edges.entries()) {
+          const e = edge as LiveObject<{ source: string; target: string }>;
+          if (
+            explicitEdgeDeletes.has(id) ||
+            !finalNodeIds.has(e.get("source") as string) ||
+            !finalNodeIds.has(e.get("target") as string)
+          ) {
+            edges.delete(id);
+          }
+        }
 
         // Add/replace nodes
         for (const node of validatedNodes) {
@@ -212,8 +251,9 @@ export const designAgentTask = task({
           );
         }
 
-        // Add/replace edges
+        // Add/replace edges — only if both endpoints exist in the final node set
         for (const edge of design.edges) {
+          if (!finalNodeIds.has(edge.source) || !finalNodeIds.has(edge.target)) continue;
           edges.set(
             edge.id,
             new LiveObject({
@@ -226,6 +266,16 @@ export const designAgentTask = task({
             })
           );
         }
+
+        // Persist assistant reply to shared chat history
+        (root.get("aiChat") as LiveList<ChatMessage>).push({
+          id: randomUUID(),
+          sender: "Ghost AI",
+          role: "assistant",
+          content: design.summary,
+          timestamp: Date.now(),
+          channel: "architect",
+        });
       });
     } catch (err) {
       logger.error("Storage mutation failed", { err });
@@ -233,8 +283,22 @@ export const designAgentTask = task({
       await liveblocks.broadcastEvent(payload.roomId, {
         type: "ai-status",
         status: "error",
-        message: "Design was generated but failed to apply to canvas.",
+        text: "Design was generated but failed to apply to canvas.",
       });
+      try {
+        await liveblocks.mutateStorage(payload.roomId, ({ root }) => {
+          (root.get("aiChat") as LiveList<ChatMessage>).push({
+            id: randomUUID(),
+            sender: "Ghost AI",
+            role: "assistant",
+            content: "Design was generated but failed to apply to canvas.",
+            timestamp: Date.now(),
+            channel: "architect",
+          });
+        });
+      } catch (chatErr) {
+        logger.warn("Could not persist error message to aiChat", { chatErr });
+      }
       await liveblocks.setPresence(payload.roomId, {
         userId: AI_USER_ID,
         data: { cursor: null, thinking: false },
@@ -248,7 +312,7 @@ export const designAgentTask = task({
     await liveblocks.broadcastEvent(payload.roomId, {
       type: "ai-status",
       status: "complete",
-      message: design.summary,
+      text: design.summary,
     });
 
     // 9. Clear AI presence

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { startTransition, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Bot, Download, FileText, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,11 +44,13 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
 
   const self = useSelf();
 
-  // Shared ai-chat feed from Liveblocks Storage
+  // Shared ai-chat feed from Liveblocks Storage, split by channel
   const rawMessages = useStorage((root) => root.aiChat);
-  const aiChatMessages: ChatMessage[] = (rawMessages ?? [])
+  const allMessages: ChatMessage[] = (rawMessages ?? [])
     .map((m) => parseChatMessage(m))
     .filter((m): m is ChatMessage => m !== null);
+  const architectMessages = allMessages.filter((m) => m.channel === "architect");
+  const chatMessages = allMessages.filter((m) => m.channel === "chat");
 
   const pushToAiChat = useMutation(({ storage }, message: ChatMessage) => {
     storage.get("aiChat").push(message);
@@ -56,19 +58,15 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
 
   useEventListener(({ event }) => {
     if (event.type !== "ai-status") return;
-    const payload: AiStatusPayload = {
-      status: event.status,
-      text: event.message || undefined,
-    };
-    if (!isAiStatusPayload(payload)) return;
+    if (!isAiStatusPayload(event)) return;
 
-    setAiStatus(payload);
+    setAiStatus(event);
 
-    if (payload.status === "start" || payload.status === "processing") {
+    if (event.status === "start" || event.status === "processing") {
       setIsGenerating(true);
     }
 
-    if (payload.status === "complete" || payload.status === "error") {
+    if (event.status === "complete" || event.status === "error") {
       setIsGenerating(false);
       setAiStatus(null);
     }
@@ -80,44 +78,28 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
     stopOnCompletion: true,
   });
 
+  const runStatus = run?.status;
   useEffect(() => {
-    if (!run) return;
+    if (!runStatus) return;
 
     const terminal = ["COMPLETED", "FAILED", "CRASHED", "CANCELED", "TIMED_OUT", "SYSTEM_FAILURE", "EXPIRED"];
-    if (!terminal.includes(run.status)) return;
+    if (!terminal.includes(runStatus)) return;
 
-    if (run.status === "COMPLETED") {
-      const output = run.output as { summary: string } | undefined;
-      pushToAiChat({
-        id: crypto.randomUUID(),
-        sender: "Ghost AI",
-        role: "assistant",
-        content: output?.summary ?? "Design complete! Check the canvas.",
-        timestamp: Date.now(),
-      });
-    } else {
-      pushToAiChat({
-        id: crypto.randomUUID(),
-        sender: "Ghost AI",
-        role: "assistant",
-        content: "Something went wrong generating the design. Please try again.",
-        timestamp: Date.now(),
-      });
-    }
-
-    setRunSession(null);
-    setIsGenerating(false);
-  }, [run?.status]);
+    startTransition(() => {
+      setRunSession(null);
+      setIsGenerating(false);
+    });
+  }, [runStatus]);
 
   // Auto-scroll AI Architect messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [aiChatMessages, isGenerating]);
+  }, [architectMessages, isGenerating]);
 
   // Auto-scroll chat messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [aiChatMessages]);
+  }, [chatMessages]);
 
   async function handleSend() {
     const text = input.trim();
@@ -132,8 +114,11 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
       role: "user",
       content: text,
       timestamp: Date.now(),
+      channel: "architect",
     });
 
+    // Phase 1: start the task. Failure here means no run was created.
+    let runId: string;
     try {
       const designRes = await fetch("/api/ai/design", {
         method: "POST",
@@ -145,8 +130,24 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
         throw new Error("Failed to start design generation");
       }
 
-      const { runId } = (await designRes.json()) as { runId: string };
+      ({ runId } = (await designRes.json()) as { runId: string });
+    } catch {
+      pushToAiChat({
+        id: crypto.randomUUID(),
+        sender: "Ghost AI",
+        role: "assistant",
+        content: "Failed to start the design agent. Please try again.",
+        timestamp: Date.now(),
+        channel: "architect",
+      });
+      setIsGenerating(false);
+      return;
+    }
 
+    // Phase 2: get the realtime token for live progress (best-effort).
+    // The task is already running; if this fails, useEventListener will still
+    // receive the task's ai-status broadcasts and clear isGenerating when done.
+    try {
       const tokenRes = await fetch("/api/ai/design/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -160,14 +161,8 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
       const { token } = (await tokenRes.json()) as { token: string };
       setRunSession({ runId, token });
     } catch {
-      pushToAiChat({
-        id: crypto.randomUUID(),
-        sender: "Ghost AI",
-        role: "assistant",
-        content: "Failed to start the design agent. Please try again.",
-        timestamp: Date.now(),
-      });
-      setIsGenerating(false);
+      // No realtime subscription, but the task will complete and write to
+      // shared storage. The ai-status broadcast events will clear isGenerating.
     }
   }
 
@@ -193,6 +188,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
       role: "user",
       content: text,
       timestamp: Date.now(),
+      channel: "chat",
     };
 
     try {
@@ -272,11 +268,11 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
         {/* AI Architect */}
         <TabsContent value="architect" className="flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {aiChatMessages.length === 0 && !isGenerating ? (
+            {architectMessages.length === 0 && !isGenerating ? (
               <EmptyState onChipClick={handleChip} />
             ) : (
               <>
-                {aiChatMessages.map((msg) => (
+                {architectMessages.map((msg) => (
                   <div
                     key={msg.id}
                     className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}
@@ -346,7 +342,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
         {/* Chat */}
         <TabsContent value="chat" className="flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {aiChatMessages.length === 0 ? (
+            {chatMessages.length === 0 ? (
               <div className="flex flex-col items-center gap-3 pt-8 px-2 text-center">
                 <p className="text-sm font-medium text-text-primary">Room Chat</p>
                 <p className="text-xs text-text-muted">
@@ -355,7 +351,7 @@ export function AISidebar({ isOpen, onClose, projectId, roomId }: AISidebarProps
               </div>
             ) : (
               <>
-                {aiChatMessages.map((msg) => (
+                {chatMessages.map((msg) => (
                   <div key={msg.id} className="flex flex-col gap-0.5">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-medium text-text-secondary">

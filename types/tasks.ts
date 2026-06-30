@@ -28,6 +28,7 @@ export const ChatMessageSchema = z.object({
   role: z.union([z.literal("user"), z.literal("assistant")]),
   content: z.string().min(1),
   timestamp: z.number(),
+  channel: z.union([z.literal("architect"), z.literal("chat")]),
 });
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;

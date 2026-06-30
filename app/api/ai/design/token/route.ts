@@ -1,5 +1,5 @@
 import { auth } from "@trigger.dev/sdk/v3";
-import { getClerkIdentity } from "@/lib/project-access";
+import { getClerkIdentity, getProjectAccess } from "@/lib/project-access";
 import { prisma } from "@/lib/prisma";
 
 interface TokenBody {
@@ -22,11 +22,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "runId is required" }, { status: 400 });
   }
 
-  let taskRun: { userId: string } | null;
+  let taskRun: { userId: string; projectId: string } | null;
   try {
     taskRun = await prisma.taskRun.findUnique({
       where: { runId: runId.trim() },
-      select: { userId: true },
+      select: { userId: true, projectId: true },
     });
   } catch (err) {
     console.error(err);
@@ -37,6 +37,9 @@ export async function POST(request: Request) {
   if (taskRun.userId !== identity.userId) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const access = await getProjectAccess(taskRun.projectId, identity.userId, identity.email);
+  if (!access) return Response.json({ error: "Forbidden" }, { status: 403 });
 
   let token: string;
   try {
